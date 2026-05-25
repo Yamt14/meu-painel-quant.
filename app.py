@@ -79,7 +79,7 @@ try:
         else:
             st.error("🔴 **REGIME DE MERCADO:** Bearish (Negative Gamma). A volatilidade pode acelerar forte. Cuidado com vendas perdendo o suporte.")
             
-        st.info(f"🎯 **Alvo Dinâmico:** Se o preço se mantiver acima de ${zero_gamma:.2f}, a tendência natural é buscar a região de **${call_wall:.2f}**.")
+       st.info(f"🎯 **Alvo Dinâmico:** Se o preço se mantiver acima de {zero_gamma:.2f}, a tendência natural é buscar a região de {call_wall:.2f}.")
 
 except Exception as e:
     st.error(f"Erro ao processar dados do mercado: {e}. Tente atualizar a página em alguns instantes.")
