@@ -10,23 +10,22 @@ st.title("📊 Painel Quant – MNQ Nasdaq 5 Minutos")
 # Função para buscar os dados intradiários de 5m e fazer a conversão para o MNQ
 @st.cache_data(ttl=60)  # Atualiza a cada 1 minuto para o tempo gráfico de 5m ficar ágil
 def carregar_dados_mnq_5m():
-    # 1. Puxamos o histórico intradiário de 5 minutos do contrato futuro (máximo de 60 dias para 5m no yfinance)
+    # 1. Puxamos apenas o dia atual (1d) para que os candles de 5m fiquem grandes e visíveis
     try:
         ticker_futuro = yf.Ticker("NQ=F")
-        # Puxa os últimos 5 dias com velas de 5 minutos
-        df_futuro = ticker_futuro.history(period="5d", interval="5m")
+        df_futuro = ticker_futuro.history(period="1d", interval="5m")
         preco_mnq = df_futuro["Close"].iloc[-1]
     except:
         # Dados de backup caso a API falhe temporariamente
         import pandas as pd
         import numpy as np
-        datas = pd.date_range(end=pd.Timestamp.now(), periods=100, freq='5min')
+        datas = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='5min')
         df_futuro = pd.DataFrame({
-            'Open': np.linspace(19800, 19900, 100),
-            'High': np.linspace(19820, 19920, 100),
-            'Low': np.linspace(19780, 19880, 100),
-            'Close': np.linspace(19810, 19900, 100),
-            'Volume': np.random.randint(1000, 5000, 100)
+            'Open': np.linspace(19800, 19900, 50),
+            'High': np.linspace(19820, 19920, 50),
+            'Low': np.linspace(19780, 19880, 50),
+            'Close': np.linspace(19810, 19900, 50),
+            'Volume': np.random.randint(1000, 5000, 50)
         }, index=datas)
         preco_mnq = 19902.00
         
@@ -66,14 +65,14 @@ try:
     with col4:
         st.metric(label="Zero Gamma (Linha de Pivô)", value=f"{zero_gamma:,.2f}")
 
-    st.caption("Gráfico intradiário de 5 minutos com projeção das barreiras macro de opções.")
+    st.caption("Gráfico intradiário focado no dia de hoje com velas de 5 minutos.")
     st.markdown("---")
 
     # --- CORPO PRINCIPAL (Gráfico Central + Painel Lateral) ---
     col_grafico, col_lateral = st.columns([3, 1])
 
     with col_grafico:
-        st.subheader("Candlesticks de 5 Minutos (Últimos Dias)")
+        st.subheader("Candlesticks de 5 Minutos (Sessão Atual)")
         
         # Criando o painel duplo: Candles (topo) e Volume (rodapé)
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
@@ -100,9 +99,13 @@ try:
         ), row=2, col=1)
         
         # Desenhando as linhas horizontais de barreiras institucionais
-        fig.add_hline(y=call_wall, line_color="green", line_width=3, annotation_text="CALL WALL (Resistência)", row=1, col=1)
-        fig.add_hline(y=zero_gamma, line_dash="dash", line_color="yellow", line_width=2, annotation_text="Zero Gamma (Pivô)", row=1, col=1)
-        fig.add_hline(y=put_wall, line_color="red", line_width=3, annotation_text="PUT WALL (Suporte)", row=1, col=1)
+        fig.add_hline(y=call_wall, line_color="green", line_width=3, annotation_text="CALL WALL", row=1, col=1)
+        fig.add_hline(y=zero_gamma, line_dash="dash", line_color="yellow", line_width=2, annotation_text="Zero Gamma", row=1, col=1)
+        fig.add_hline(y=put_wall, line_color="red", line_width=3, annotation_text="PUT WALL", row=1, col=1)
+        
+        # Encontra a máxima e a mínima do dia atual para ajustar o zoom perfeito
+        valores_altos = [df_historico['High'].max(), call_wall]
+        valores_baixos = [df_historico['Low'].min(), zero_gamma if preco_spot > zero_gamma else put_wall]
         
         # Customização estética do layout em modo escuro
         fig.update_layout(
@@ -114,8 +117,8 @@ try:
             margin=dict(l=10, r=10, t=10, b=10)
         )
         
-        # Centraliza o zoom vertical dinamicamente perto do preço atual para o gráfico não achatar
-        fig.update_yaxes(range=[preco_spot - 250, preco_spot + 250], row=1, col=1)
+        # Ajusta o eixo Y de forma inteligente ao redor do preço real trabalhado no dia
+        fig.update_yaxes(range=[min(valores_baixos) - 50, max(valores_altos) + 50], row=1, col=1)
         
         st.plotly_chart(fig, use_container_width=True)
 
