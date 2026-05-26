@@ -56,31 +56,89 @@ try:
     st.caption("Análise quantitativa baseada na estrutura do mercado de opções convertida para o mercado futuro.")
     st.markdown("---")
 
-    # --- CORPO PRINCIPAL (Gráfico Central + Painel Lateral) ---
-    col_grafico, col_lateral = st.columns([3, 1])
+    # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
+    col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
 
-    with col_grafico:
-        st.subheader("Zonas de Liquidez e Alvos de Volatilidade no MNQ")
+    # --- COLUNA ESQUERDA: DELTA HEDGING & TIME PRESSURE ---
+    with col_esquerda:
+        # 1. DELTA HEDGING
+        idx_max_pos_delta = np.argmax(delta_gex)
+        idx_min_neg_delta = np.argmin(delta_gex)
         
-        fig = go.Figure()
-        
-        # Desenhar as linhas de pontuação do mercado futuro
-        fig.add_hline(y=preco_spot, line_dash="dot", line_color="cyan", line_width=2, annotation_text="Preço MNQ Atual")
-        fig.add_hline(y=call_wall, line_color="green", line_width=4, annotation_text="CALL WALL (Barreira Vendedora)")
-        fig.add_hline(y=zero_gamma, line_dash="dash", line_color="yellow", line_width=2, annotation_text="Zero Gamma")
-        fig.add_hline(y=put_wall, line_color="red", line_width=4, annotation_text="PUT WALL (Barreira Compradora)")
-        
-        # Ajustar o zoom do gráfico ao redor dos pontos do MNQ
-        fig.update_layout(
-            height=500, 
-            template="plotly_dark", 
-            yaxis_range=[put_wall - 500, call_wall + 500],
-            paper_bgcolor="#111", 
-            plot_bgcolor="#111"
+        cores_delta = []
+        for i, v in enumerate(delta_gex):
+            if i == idx_max_pos_delta:
+                cores_delta.append('#00ff88')
+            elif i == idx_min_neg_delta:
+                cores_delta.append('#ff3a60')
+            else:
+                cores_delta.append('#1a53ff')
+                
+        fig_delta = go.Figure()
+        fig_delta.add_trace(go.Bar(x=strikes, y=delta_gex, marker_color=cores_delta, showlegend=False))
+        fig_delta.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_delta.update_layout(
+            title="DELTA HEDGING", title_font_size=12, height=270, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_delta, use_container_width=True)
 
-# --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
+        # 2. TIME PRESSURE
+        idx_max_pos_time = np.argmax(time_gex)
+        idx_min_neg_time = np.argmin(time_gex)
+        
+        cores_time = []
+        for i, v in enumerate(time_gex):
+            if i == idx_max_pos_time:
+                cores_time.append('#00ff88')
+            elif i == idx_min_neg_time:
+                cores_time.append('#ff3a60')
+            else:
+                cores_time.append('#1a53ff')
+                
+        fig_time = go.Figure()
+        fig_time.add_trace(go.Bar(x=strikes, y=time_gex, marker_color=cores_time, showlegend=False))
+        fig_time.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_time.update_layout(
+            title="TIME PRESSURE", title_font_size=12, height=270, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_time, use_container_width=True)
+
+    # --- COLUNA CENTRAL: GRÁFICO DE CANDLES COM AS LINHAS DO MODELO MACRO ---
+    with col_centro:
+        fig_candles = go.Figure()
+        fig_candles.add_trace(go.Candlestick(
+            x=df_candles.index,
+            open=df_candles['Open'], high=df_candles['High'],
+            low=df_candles['Low'], close=df_candles['Close'],
+            name="MNQ 5m", increasing_line_color='#00ffc2', decreasing_line_color='#ff3a60'
+        ))
+
+        # Adicionando as 3 linhas de barreira institucionais horizontais (GEX Levels)
+        fig_candles.add_hline(y=call_wall_val, line_color="#00ff88", line_width=2, 
+                              annotation_text=f"CALL WALL: {call_wall_val:,.0f}", annotation_position="top right")
+        
+        fig_candles.add_hline(y=zero_gamma_val, line_color="#ffbb00", line_width=1.5, line_dash="dash",
+                              annotation_text=f"ZERO GAMMA: {zero_gamma_val:,.0f}", annotation_position="top right")
+        
+        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
+                              annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
+
+        # Configura a margem do zoom vertical para que as 3 linhas caibam perfeitamente na janela
+        y_min = min(df_candles['Low'].min(), put_wall_val)
+        y_max = max(df_candles['High'].max(), call_wall_val)
+        
+        fig_candles.update_layout(
+            title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
+            xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
+            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 20, y_max + 20], showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_candles, use_container_width=True)
+
+    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
     with col_direita:
         idx_max_pos_inst = np.argmax(inst_flow)
         idx_min_neg_inst = np.argmin(inst_flow)
