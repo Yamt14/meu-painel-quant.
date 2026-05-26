@@ -7,14 +7,13 @@ import pandas as pd
 # 1. Configuração da página em modo ultra-amplo (Wide Mode)
 st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Estilização CSS para fundo Blackout e métricas limpas
+# Estilização CSS para fundo Blackout e alinhamento dos textos do topo
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
+        [data-testid="stMetricLabel"] { font-size: 14px !important; color: #888888 !important; font-weight: bold !important; }
+        [data-testid="stMetricValue"] { font-size: 24px !important; font-family: monospace; color: white !important; }
         .block-container { padding-top: 1rem; padding-bottom: 0rem; }
-        .metric-title { color: #888888; font-size: 14px; font-weight: bold; margin-bottom: 2px; }
-        .metric-value { color: #ffffff; font-size: 24px; font-family: monospace; font-weight: bold; }
-        .metric-box { background-color: #111111; padding: 10px 15px; border-radius: 6px; border: 1px solid #222222; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -56,28 +55,16 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-    # --- NOVO BLOCO SUPERIOR DE MÉTRICAS (Forçado via HTML/Markdown para nunca sumir) ---
+    # --- BLOCO SUPERIORES DE MÉTRICAS (Texto inserido direto no label) ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.markdown(f"""<div class='metric-box'>
-            <div class='metric-title'>MNQ PREÇO ATUAL</div>
-            <div class='metric-value'>{preco_spot:,.2f}</div>
-        </div>""", unsafe_allow_html=True)
+        st.metric(label="MNQ PREÇO ATUAL", value=f"{preco_spot:,.2f}")
     with col2:
-        st.markdown(f"""<div class='metric-box'>
-            <div class='metric-title'>CALL WALL (RESISTÊNCIA)</div>
-            <div class='metric-value'>{call_wall_val:,.2f}</div>
-        </div>""", unsafe_allow_html=True)
+        st.metric(label="CALL WALL (RESISTÊNCIA)", value=f"{call_wall_val:,.2f}")
     with col3:
-        st.markdown(f"""<div class='metric-box'>
-            <div class='metric-title'>PUT WALL (SUPORTE)</div>
-            <div class='metric-value'>{put_wall_val:,.2f}</div>
-        </div>""", unsafe_allow_html=True)
+        st.metric(label="PUT WALL (SUPORTE)", value=f"{put_wall_val:,.2f}")
     with col4:
-        st.markdown(f"""<div class='metric-box'>
-            <div class='metric-title'>ZERO GAMMA (PIVÔ)</div>
-            <div class='metric-value'>{zero_gamma_val:,.2f}</div>
-        </div>""", unsafe_allow_html=True)
+        st.metric(label="ZERO GAMMA (PIVÔ)", value=f"{zero_gamma_val:,.2f}")
 
     st.markdown("---")
 
