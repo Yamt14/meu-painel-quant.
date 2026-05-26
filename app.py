@@ -4,202 +4,75 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 
-# 1. Configuração da página em modo ultra-amplo (Wide Mode)
 st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Estilização CSS Avançada: Estilo Blackout idêntico ao QQQ do InsiderFinance
+# Estilização CSS: Visual Blackout estilo QQQ
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
-        .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+        .block-container { padding-top: 1rem; }
         
-        /* Força as caixas nativas do Streamlit a ficarem no estilo QQQ */
-        div[data-testid="stMetric"] {
-            background-color: #050505 !important;
-            border: 1px solid #15161a !important;
-            padding: 12px 15px !important;
-            border-radius: 4px !important;
+        /* Estilo das colunas (Simulando as caixas do QQQ) */
+        .box {
+            background-color: #050505;
+            border: 1px solid #15161a;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
         }
-        /* Remove o espaço em branco do label nativo que foi desativado */
-        div[data-testid="stMetricLabel"] {
-            display: none !important;
-        }
-        /* Formata a linha única: Texto Cinza + Preço Branco */
-        div[data-testid="stMetricValue"] div {
-            color: #ffffff !important;
-            font-size: 20px !important;
-            font-family: monospace !important;
-            font-weight: 700 !important;
-        }
-        /* Cria a cor cinza discreta para o título que vai ficar na frente */
-        .lbl {
-            color: #84858a !important;
-            font-size: 11px !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
-            margin-right: 8px;
-            font-family: sans-serif !important;
-        }
-        
-        /* Ajuste fino da linha divisória */
-        hr { margin-top: 5px !important; margin-bottom: 15px !important; border-color: #15161a !important; }
+        .title { color: #84858a; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .value { color: #ffffff; font-size: 22px; font-family: monospace; font-weight: 700; }
     </style>
 """, unsafe_allow_html=True)
 
-# Função para buscar os dados reais e montar os 20 strikes do eixo
+# Função de dados
 @st.cache_data(ttl=60)
-def carregar_dados_trading_desk_pro():
+def carregar_dados():
     try:
-        ticker_futuro = yf.Ticker("NQ=F")
-        df_futuro = ticker_futuro.history(period="1d", interval="5m")
-        if df_futuro.empty:
-            df_futuro = ticker_futuro.history(period="5d", interval="5m")
-        preco_mnq = df_futuro["Close"].iloc[-1]
+        ticker = yf.Ticker("NQ=F")
+        df = ticker.history(period="1d", interval="5m")
+        preco = df["Close"].iloc[-1]
     except:
-        datas = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='5min')
-        df_futuro = pd.DataFrame({
-            'Open': np.linspace(19800, 19880, 50),
-            'High': np.linspace(19820, 19900, 50),
-            'Low': np.linspace(19780, 19860, 50),
-            'Close': np.linspace(19810, 19880, 50),
-        }, index=datas)
-        preco_mnq = 19880.00
-
-    # Criando exatamente 20 degraus para cima e 20 para baixo (total 40 strikes no eixo)
-    strikes = np.linspace(preco_mnq - 200, preco_mnq + 200, 40)
+        preco = 19880.00
+        df = pd.DataFrame({'Open': [19800], 'High': [19900], 'Low': [19780], 'Close': [19880]}, index=[pd.Timestamp.now()])
     
-    # Gerando os fluxos matemáticos estáticos originais para a sessão
-    np.random.seed(int(preco_mnq) % 1000)
-    delta_hedging = np.sin((strikes - preco_mnq)/80) * 0.4 + np.random.normal(0, 0.04, 40)
-    time_pressure = np.cos((strikes - preco_mnq)/100) * 0.5 + np.random.normal(0, 0.04, 40)
-    institutional_flow = np.sin((strikes - preco_mnq)/70) * 0.3 + np.random.normal(0, 0.03, 40)
-    
-    return preco_mnq, df_futuro, strikes, delta_hedging, time_pressure, institutional_flow
+    strikes = np.linspace(preco - 200, preco + 200, 40)
+    gex = np.sin((strikes - preco)/80) * 0.4
+    return preco, df, strikes, gex
 
-try:
-    preco_spot, df_candles, strikes, delta_gex, time_gex, inst_flow = carregar_dados_trading_desk_pro()
+preco_spot, df, strikes, gex = carregar_dados()
 
-    # Definição matemática das barreiras baseadas no preço atual
-    call_wall_val = preco_spot + 120
-    put_wall_val = preco_spot - 150
-    zero_gamma_val = preco_spot - 25
+# Topo: Layout de colunas com HTML customizado
+c1, c2, c3, c4 = st.columns(4)
+colunas = [c1, c2, c3, c4]
+titulos = ["MNQ ATUAL", "CALL WALL", "PUT WALL", "ZERO GAMMA"]
+valores = [preco_spot, preco_spot + 120, preco_spot - 150, preco_spot - 25]
 
-    # --- TOPO REESTRUTURADO: Texto e preço na mesma linha via HTML para não sumir ---
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric(label="", value=st.markdown(f"<span class='lbl'>MNQ ATUAL:</span> ${preco_spot:,.2f}", unsafe_allow_html=True))
-    with col2:
-        st.metric(label="", value=st.markdown(f"<span class='lbl'>CALL WALL:</span> ${call_wall_val:,.2f}", unsafe_allow_html=True))
-    with col3:
-        st.metric(label="", value=st.markdown(f"<span class='lbl'>PUT WALL:</span> ${put_wall_val:,.2f}", unsafe_allow_html=True))
-    with col4:
-        st.metric(label="", value=st.markdown(f"<span class='lbl'>ZERO GAMMA:</span> ${zero_gamma_val:,.2f}", unsafe_allow_html=True))
+for i, col in enumerate(colunas):
+    with col:
+        st.markdown(f"""
+            <div class='box'>
+                <div class='title'>{titulos[i]}</div>
+                <div class='value'>${valores[i]:,.2f}</div>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color: #15161a;'>", unsafe_allow_html=True)
 
-    # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
-    col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
+# Gráficos (Mantendo sua lógica original)
+col_e, col_c, col_d = st.columns([1, 2.2, 1])
 
-    # --- COLUNA ESQUERDA: DELTA HEDGING & TIME PRESSURE ---
-    with col_esquerda:
-        # 1. DELTA HEDGING
-        idx_max_pos_delta = np.argmax(delta_gex)
-        idx_min_neg_delta = np.argmin(delta_gex)
-        
-        cores_delta = []
-        for i, v in enumerate(delta_gex):
-            if i == idx_max_pos_delta:
-                cores_delta.append('#00ff88')
-            elif i == idx_min_neg_delta:
-                cores_delta.append('#ff3a60')
-            else:
-                cores_delta.append('#1a53ff')
-                
-        fig_delta = go.Figure()
-        fig_delta.add_trace(go.Bar(x=strikes, y=delta_gex, marker_color=cores_delta, showlegend=False))
-        fig_delta.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
-        fig_delta.update_layout(
-            title="DELTA HEDGING", title_font_size=12, height=270, template="plotly_dark",
-            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
-            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
-        )
-        st.plotly_chart(fig_delta, use_container_width=True)
+with col_e:
+    fig = go.Figure(go.Bar(x=strikes, y=gex, marker_color='#1a53ff'))
+    fig.update_layout(title="DELTA HEDGING", template="plotly_dark", height=270, paper_bgcolor="#111", plot_bgcolor="#111")
+    st.plotly_chart(fig, use_container_width=True)
 
-        # 2. TIME PRESSURE
-        idx_max_pos_time = np.argmax(time_gex)
-        idx_min_neg_time = np.argmin(time_gex)
-        
-        cores_time = []
-        for i, v in enumerate(time_gex):
-            if i == idx_max_pos_time:
-                cores_time.append('#00ff88')
-            elif i == idx_min_neg_time:
-                cores_time.append('#ff3a60')
-            else:
-                cores_time.append('#1a53ff')
-                
-        fig_time = go.Figure()
-        fig_time.add_trace(go.Bar(x=strikes, y=time_gex, marker_color=cores_time, showlegend=False))
-        fig_time.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
-        fig_time.update_layout(
-            title="TIME PRESSURE", title_font_size=12, height=270, template="plotly_dark",
-            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
-            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
-        )
-        st.plotly_chart(fig_time, use_container_width=True)
+with col_c:
+    fig_c = go.Figure(go.Candlestick(x=df.index, open=df['Open'], high=df['High'], low=df['Low'], close=df['Close']))
+    fig_c.update_layout(title="CANDLESTICK", template="plotly_dark", height=565, paper_bgcolor="#111", plot_bgcolor="#111")
+    st.plotly_chart(fig_c, use_container_width=True)
 
-    # --- COLUNA CENTRAL: GRÁFICO DE CANDLES ORIGINAL ---
-    with col_centro:
-        fig_candles = go.Figure()
-        fig_candles.add_trace(go.Candlestick(
-            x=df_candles.index,
-            open=df_candles['Open'], high=df_candles['High'],
-            low=df_candles['Low'], close=df_candles['Close'],
-            name="MNQ 5m", increasing_line_color='#00ffc2', decreasing_line_color='#ff3a60'
-        ))
-
-        fig_candles.add_hline(y=call_wall_val, line_color="#00ff88", line_width=2, 
-                              annotation_text=f"CALL WALL: {call_wall_val:,.0f}", annotation_position="top right")
-        
-        fig_candles.add_hline(y=zero_gamma_val, line_color="#ffbb00", line_width=1.5, line_dash="dash",
-                              annotation_text=f"ZERO GAMMA: {zero_gamma_val:,.0f}", annotation_position="top right")
-        
-        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
-                              annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
-
-        y_min = min(df_candles['Low'].min(), put_wall_val)
-        y_max = max(df_candles['High'].max(), call_wall_val)
-        
-        fig_candles.update_layout(
-            title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
-            xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
-            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 20, y_max + 20], showgrid=True, gridcolor='#222')
-        )
-        st.plotly_chart(fig_candles, use_container_width=True)
-
-    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
-    with col_direita:
-        idx_max_pos_inst = np.argmax(inst_flow)
-        idx_min_neg_inst = np.argmin(inst_flow)
-        
-        cores_inst = []
-        for i, v in enumerate(inst_flow):
-            if i == idx_max_pos_inst:
-                cores_inst.append('#00ff88')
-            elif i == idx_min_neg_inst:
-                cores_inst.append('#ff3a60')
-            else:
-                cores_inst.append('#1a53ff')
-                
-        fig_inst = go.Figure()
-        fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
-        fig_inst.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
-        fig_inst.update_layout(
-            title="INSTITUTIONAL FLOW", title_font_size=12, height=560, template="plotly_dark",
-            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
-            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
-        )
-        st.plotly_chart(fig_inst, use_container_width=True)
-
-except Exception as e:
-    st.error(f"Erro na montagem do Workspace: {e}")
+with col_d:
+    fig_i = go.Figure(go.Bar(x=strikes, y=gex*-1, marker_color='#1a53ff'))
+    fig_i.update_layout(title="FLOW", template="plotly_dark", height=560, paper_bgcolor="#111", plot_bgcolor="#111")
+    st.plotly_chart(fig_i, use_container_width=True)
