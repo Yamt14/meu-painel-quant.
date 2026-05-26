@@ -7,20 +7,37 @@ import pandas as pd
 # 1. Configuração da página em modo ultra-amplo (Wide Mode)
 st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Estilização CSS Avançada: Idêntica ao layout blackout do QQQ
+# Estilização CSS Avançada: Estilo Blackout idêntico ao QQQ do InsiderFinance
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
         .block-container { padding-top: 1rem; padding-bottom: 0rem; }
         
-        /* Layout das Caixas do Topo Ultra-Compacto */
-        .metric-row { display: flex; gap: 15px; margin-bottom: 10px; width: 100%; }
-        .metric-box { background-color: #050505; padding: 12px 15px; border-radius: 4px; border: 1px solid #15161a; flex: 1; }
-        .metric-title { color: #84858a; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .metric-value { color: #ffffff; font-size: 24px; font-family: monospace; font-weight: 700; }
+        /* Força as caixas nativas do Streamlit a ficarem no estilo QQQ */
+        div[data-testid="stMetric"] {
+            background-color: #050505 !important;
+            border: 1px solid #15161a !important;
+            padding: 10px 15px !important;
+            border-radius: 4px !important;
+        }
+        /* Alinha e colore o título (Cinza pequeno e em maiúsculo) */
+        div[data-testid="stMetricLabel"] p {
+            color: #84858a !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+        /* Formata o valor (Branco, monospace e negrito) */
+        div[data-testid="stMetricValue"] div {
+            color: #ffffff !important;
+            font-size: 24px !important;
+            font-family: monospace !important;
+            font-weight: 700 !important;
+        }
         
-        /* Ajuste de espaçamento da linha divisória */
-        hr { margin-top: 10px !important; margin-bottom: 15px !important; border-color: #15161a !important; }
+        /* Ajuste fino da linha divisória */
+        hr { margin-top: 5px !important; margin-bottom: 15px !important; border-color: #15161a !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -62,27 +79,16 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-    # --- TOPO COMPACTO: Nomes curtos e limpos no padrão QQQ ---
-    st.markdown(f"""
-    <div class='metric-row'>
-        <div class='metric-box'>
-            <div class='metric-title'>Spot Price</div>
-            <div class='metric-value'>${preco_spot:,.2f}</div>
-        </div>
-        <div class='metric-box'>
-            <div class='metric-title'>Call Wall</div>
-            <div class='metric-value'>${call_wall_val:,.2f}</div>
-        </div>
-        <div class='metric-box'>
-            <div class='metric-title'>Put Wall</div>
-            <div class='metric-value'>${put_wall_val:,.2f}</div>
-        </div>
-        <div class='metric-box'>
-            <div class='metric-title'>Zero Gamma</div>
-            <div class='metric-value'>${zero_gamma_val:,.2f}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # --- TOPO CORRIGIDO: Utilizando colunas nativas controladas por CSS ---
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(label="Spot Price", value=f"${preco_spot:,.2f}")
+    with col2:
+        st.metric(label="Call Wall", value=f"${call_wall_val:,.2f}")
+    with col3:
+        st.metric(label="Put Wall", value=f"${put_wall_val:,.2f}")
+    with col4:
+        st.metric(label="Zero Gamma", value=f"${zero_gamma_val:,.2f}")
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
