@@ -1,6 +1,8 @@
 import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
+import numpy as np
+import pandas as pd
 
 # Configuração da página estilo Trading Desk
 st.set_page_config(layout="wide", page_title="Painel Quant – MNQ Nasdaq")
