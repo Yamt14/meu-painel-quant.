@@ -1,20 +1,19 @@
 import streamlit as st
 import yfinance as yf
-import plotly.graph_objects as go
-import numpy as np
+import streamlit.components.v1 as components
 
 # Configuração da página estilo Trading Desk
-st.set_page_config(layout="wide", page_title="Painel Quant – MNQ GEX")
-st.title("📊 Painel Quant – MNQ Nasdaq Gamma Exposure")
+st.set_page_config(layout="wide", page_title="Painel Quant – MNQ")
+st.title("📊 Painel Quant – MNQ Nasdaq Live TradingView")
 
-# Função para buscar dados e simular a curva de barras quantitativas (GEX Profile)
-@st.cache_data(ttl=300)
-def carregar_estrutura_gex():
+# Função para buscar os dados macros e calcular as barreiras no MNQ
+@st.cache_data(ttl=900)
+def calcular_barreiras_mnq():
     try:
         ticker_futuro = yf.Ticker("NQ=F")
         preco_mnq = ticker_futuro.history(period="1d")["Close"].iloc[-1]
     except:
-        preco_mnq = 19898.00
+        preco_mnq = 19896.25  # Valor de backup
         
     try:
         ticker_qqq = yf.Ticker("QQQ")
@@ -22,49 +21,34 @@ def carregar_estrutura_gex():
     except:
         preco_qqq = 717.62
 
+    # Fator de conversão dinâmico
     fator_conversao = preco_mnq / preco_qqq
 
-    # Barreiras principais extraídas do modelo macro
-    call_wall = 730.00 * fator_conversao
-    put_wall = 650.00 * fator_conversao
-    zero_gamma = 709.86 * fator_conversao
+    # Barreiras extraídas do modelo de opções do QQQ
+    call_wall_qqq = 730.00
+    put_wall_qqq = 650.00
+    zero_gamma_qqq = 709.86
     
-    # Gerando a distribuição de Strikes (Degraus de preço ao redor do spot)
-    passo = 50  # Variação de pontos no MNQ
-    strikes = np.arange(int(put_wall - 500), int(call_wall + 500), passo)
+    # Conversão para escala de pontos do contrato futuro
+    call_wall_mnq = call_wall_qqq * fator_conversao
+    put_wall_mnq = put_wall_qqq * fator_conversao
+    zero_gamma_mnq = zero_gamma_qqq * fator_conversao
     
-    # Criando a simulação matemática das barras de Gamma (Exposição de Volatilidade)
-    gamma_values = []
-    for s in strikes:
-        if abs(s - call_wall) < passo:
-            val = 450000000  # Pico de Call Gamma (Barra verde gigante)
-        elif abs(s - put_wall) < passo:
-            val = -380000000  # Pico de Put Gamma (Barra vermelha de suporte)
-        elif abs(s - zero_gamma) < passo:
-            val = 10000000   # Próximo a zero
-        elif s > zero_gamma:
-            # Distribuição normal positiva para calls
-            val = np.random.randint(20000000, 150000000)
-        else:
-            # Distribuição negativa para puts
-            val = -np.random.randint(20000000, 180000000)
-        gamma_values.append(val)
-        
-    return preco_mnq, call_wall, put_wall, zero_gamma, strikes, gamma_values
+    return preco_mnq, call_wall_mnq, put_wall_mnq, zero_gamma_mnq
 
 try:
-    preco_spot, call_wall, put_wall, zero_gamma, strikes, gamma_values = carregar_estrutura_gex()
+    preco_spot, call_wall, put_wall, zero_gamma = calcular_barreiras_mnq()
     
     # --- BLOCOS SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
+        st.metric(label="MNQ Preço de Referência", value=f"{preco_spot:,.2f}")
     with col2:
-        st.metric(label="CALL WALL (Resistência)", value=f"{call_wall:,.2f}")
+        st.metric(label="CALL WALL (Resistência Alvo)", value=f"{call_wall:,.2f}")
     with col3:
-        st.metric(label="PUT WALL (Suporte)", value=f"{put_wall:,.2f}")
+        st.metric(label="PUT WALL (Suporte Crítico)", value=f"{put_wall:,.2f}")
     with col4:
-        st.metric(label="Zero Gamma (Pivô)", value=f"{zero_gamma:,.2f}")
+        st.metric(label="Zero Gamma (Eixo de Pivô)", value=f"{zero_gamma:,.2f}")
 
     st.markdown("---")
 
@@ -72,52 +56,48 @@ try:
     col_grafico, col_lateral = st.columns([3, 1])
 
     with col_grafico:
-        st.subheader("Strike Profile – Perfil de Exposição de Gamma (GEX)")
+        st.subheader("Gráfico Profissional TradingView (Tempo Real - 5m)")
         
-        # Separando cores das barras: verde para positivo, vermelho para negativo
-        cores_barras = ['#00ffc2' if v >= 0 else '#ff3a60' for v in gamma_values]
-        
-        fig = go.Figure()
-        
-        # 1. Desenha o Gráfico de Barras do Perfil Quantitativo
-        fig.add_trace(go.Bar(
-            x=strikes,
-            y=gamma_values,
-            marker_color=cores_barras,
-            name="Exposição de Gamma",
-            hovertemplate="Strike: %{x}<br>GEX: %{y:,.0f}"
-        ))
-        
-        # 2. Desenha linhas de marcação verticais para balizar onde estão os muros no preço
-        fig.add_vline(x=preco_spot, line_dash="dot", line_color="cyan", line_width=2, annotation_text="Preço Spot")
-        fig.add_vline(x=call_wall, line_color="green", line_width=2, annotation_text="Call Wall")
-        fig.add_vline(x=put_wall, line_color="red", line_width=2, annotation_text="Put Wall")
-        
-        # Estilização profissional idêntica ao tema Dark institucional
-        fig.update_layout(
-            height=580,
-            template="plotly_dark",
-            paper_bgcolor="#111",
-            plot_bgcolor="#111",
-            xaxis_title="Nível de Preço / Strikes do MNQ",
-            yaxis_title="Exposição Líquida de Gamma ($)",
-            margin=dict(l=10, r=10, t=30, b=10)
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        # CORREÇÃO CRUCIAL: "symbol": "NASDAQ:NDX" puxa o índice Nasdaq-100 real e gratuito
+        tradingview_widget = """
+        <div class="tradingview-widget-container" style="height:700px; width:100%;">
+          <div id="tradingview_nasdaq" style="height:700px;"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+          <script type="text/javascript">
+          new TradingView.widget({
+            "width": "100%",
+            "height": 700,
+            "symbol": "NASDAQ:NDX",
+            "interval": "5",
+            "timezone": "America/New_York",
+            "theme": "dark",
+            "style": "1",
+            "locale": "br",
+            "toolbar_bg": "#f1f3f6",
+            "enable_publishing": false,
+            "hide_side_toolbar": false,
+            "allow_symbol_change": true,
+            "container_id": "tradingview_nasdaq"
+          });
+          </script>
+        </div>
+        """
+        components.html(tradingview_widget, height=720)
 
     with col_lateral:
-        st.subheader("Análise Quântica")
+        st.subheader("Estrategia Operacional")
         
         if preco_spot > zero_gamma:
-            st.success("🟢 **REGIME LONG GAMMA:** O mercado está acima do eixo de pivô. Os Market Makers atuam contra a volatilidade. Movimentos tendem a consolidar ou subir devagar em direção à Call Wall.")
+            st.success("🟢 **REGIME DE FLUXO:** Comprador (Positive Gamma). Mercado trabalhando na zona de proteção institucional. Quedas tendem a ser defendidas.")
         else:
-            st.error("🔴 **REGIME SHORT GAMMA:** Zona de risco de aceleração. Abaixo do Pivô, as instituições precisam vender contratos para se proteger, acelerando os movimentos de queda.")
+            st.error("🔴 **REGIME DE FLUXO:** Vendedor (Negative Gamma). O preço perdeu o pivô macro. A volatilidade intradiária tende a acelerar forte.")
             
-        st.markdown("### 📊 Níveis Operacionais")
-        st.info(f"🚀 **Call Wall:** Bloqueio vendedor nos **{call_wall:,.0f}** pontos.")
-        st.warning(f"⚡ **Pivô:** Inversão de fluxo nos **{zero_gamma:,.0f}** pontos.")
-        st.error(f"🛡️ **Put Wall:** Defesa compradora extrema nos **{put_wall:,.0f}** pontos.")
+        st.info("💡 **Dica de Execução:** Use as ferramentas de desenho do TradingView ao lado para traçar três linhas horizontais permanentes nas coordenadas indicadas nas métricas acima.")
+
+        st.markdown("### 📋 Alvos Balizadores")
+        st.write(f"🎯 **Resistência Máxima:** `{call_wall:,.0f}`")
+        st.write(f"⚖️ **Pivô do Dia:** `{zero_gamma:,.0f}`")
+        st.write(f"🛡️ **Suporte Máximo:** `{put_wall:,.0f}`")
 
 except Exception as e:
-    st.error(f"Erro ao processar estrutura quântica: {e}")
+    st.error(f"Erro ao carregar os componentes do painel: {e}")
