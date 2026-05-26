@@ -7,13 +7,13 @@ import pandas as pd
 # 1. Configuração da página em modo ultra-amplo (Wide Mode)
 st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Estilização CSS Avançada: Idêntica ao layout blackout do QQQ
+# Estilização CSS Avançada: Idêntica ao layout blackout do QQQ / InsiderFinance
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
         .block-container { padding-top: 1rem; padding-bottom: 0rem; }
         
-        /* Layout das Caixas do Topo (Estilo QQQ / InsiderFinance) */
+        /* Layout das Caixas do Topo (Estilo QQQ) */
         .metric-row { display: flex; gap: 15px; margin-bottom: 10px; width: 100%; }
         .metric-box { background-color: #050505; padding: 15px 20px; border-radius: 4px; border: 1px solid #15161a; flex: 1; }
         .metric-title { color: #84858a; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
@@ -57,7 +57,7 @@ def carregar_dados_trading_desk_pro():
 try:
     preco_spot, df_candles, strikes, delta_gex, time_gex, inst_flow = carregar_dados_trading_desk_pro()
 
-    # Definição matemática estrita das barreiras baseadas no preço atual
+    # Definição matemática das barreiras baseadas no preço atual
     call_wall_val = preco_spot + 120
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
@@ -150,37 +150,4 @@ try:
         fig_candles.add_hline(y=call_wall_val, line_color="#00ff88", line_width=2, 
                               annotation_text=f"CALL WALL: {call_wall_val:,.0f}", annotation_position="top right")
         
-        fig_candles.add_hline(y=zero_gamma_val, line_color="#ffbb00", line_width=1.5, line_dash="dash",
-                              annotation_text=f"ZERO GAMMA: {zero_gamma_val:,.0f}", annotation_position="top right")
-        
-        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
-                              annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
-
-        y_min = min(df_candles['Low'].min(), put_wall_val)
-        y_max = max(df_candles['High'].max(), call_wall_val)
-        
-        fig_candles.update_layout(
-            title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
-            xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
-            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 20, y_max + 20], showgrid=True, gridcolor='#222')
-        )
-        st.plotly_chart(fig_candles, use_container_width=True)
-
-    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
-    with col_direita:
-        # INSTITUTIONAL FLOW (Gráfico Original Restaurado)
-        idx_max_pos_inst = np.argmax(inst_flow)
-        idx_min_neg_inst = np.argmin(inst_flow)
-        
-        cores_inst = []
-        for i, v in enumerate(inst_flow):
-            if i == idx_max_pos_inst:
-                cores_inst.append('#00ff88')
-            elif i == idx_min_neg_inst:
-                cores_inst.append('#ff3a60')
-            else:
-                cores_inst.append('#1a53ff')
-                
-        fig_inst = go.Figure()
-        fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
-        fig_inst.add_vline(x=preco_spot
+        fig_candles.add_hline(y=
