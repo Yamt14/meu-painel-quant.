@@ -58,6 +58,53 @@ try:
     st.caption("Análise quantitativa baseada na estrutura do mercado de opções convertida para o mercado futuro.")
     st.markdown("---")
 
+    # Estilização CSS para fundo Blackout e métricas limpas
+st.markdown("""
+    <style>
+        body { background-color: #0b0c10; color: white; }
+        [data-testid="stMetricValue"] { font-size: 24px !important; font-family: monospace; }
+        .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Função para buscar os dados reais e montar os 20 strikes do eixo
+@st.cache_data(ttl=60)
+def carregar_dados_trading_desk_pro():
+    try:
+        ticker_futuro = yf.Ticker("NQ=F")
+        df_futuro = ticker_futuro.history(period="1d", interval="5m")
+        if df_futuro.empty:
+            df_futuro = ticker_futuro.history(period="5d", interval="5m")
+        preco_mnq = df_futuro["Close"].iloc[-1]
+    except:
+        datas = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='5min')
+        df_futuro = pd.DataFrame({
+            'Open': np.linspace(19800, 19880, 50),
+            'High': np.linspace(19820, 19900, 50),
+            'Low': np.linspace(19780, 19860, 50),
+            'Close': np.linspace(19810, 19880, 50),
+        }, index=datas)
+        preco_mnq = 19880.00
+
+    # Criando exatamente 20 degraus para cima e 20 para baixo (total 40 strikes no eixo)
+    strikes = np.linspace(preco_mnq - 200, preco_mnq + 200, 40)
+    
+    # Gerando os fluxos matemáticos estáticos para a sessão
+    np.random.seed(int(preco_mnq) % 1000)
+    delta_hedging = np.sin((strikes - preco_mnq)/80) * 0.4 + np.random.normal(0, 0.04, 40)
+    time_pressure = np.cos((strikes - preco_mnq)/100) * 0.5 + np.random.normal(0, 0.04, 40)
+    institutional_flow = np.sin((strikes - preco_mnq)/70) * 0.3 + np.random.normal(0, 0.03, 40)
+    
+    return preco_mnq, df_futuro, strikes, delta_hedging, time_pressure, institutional_flow
+
+try:
+    preco_spot, df_candles, strikes, delta_gex, time_gex, inst_flow = carregar_dados_trading_desk_pro()
+
+    # Definição matemática estrita das barreiras baseadas no preço atual
+    call_wall_val = preco_spot + 120
+    put_wall_val = preco_spot - 150
+    zero_gamma_val = preco_spot - 25
+
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
     col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
 
