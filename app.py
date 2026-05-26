@@ -6,59 +6,16 @@ import pandas as pd
 
 # Configuração da página estilo Trading Desk
 st.set_page_config(layout="wide", page_title="Painel Quant – MNQ Nasdaq")
-st.title("📊 Painel Quant – MNQ Nasdaq Futuros")
+st.title("📊 Painel Quant – MNQ Nasdaq Futuros")import streamlit as st
+import yfinance as yf
+import plotly.graph_objects as go
+import numpy as np
+import pandas as pd
 
-# Função para buscar os dados e fazer a conversão matemática para o MNQ
-@st.cache_data(ttl=900)  # Guarda o resultado por 15 minutos para evitar bloqueios
-def carregar_dados_mnq():
-    # 1. Puxamos o preço real do contrato futuro do Nasdaq (Ticker: NQ=F)
-    try:
-        ticker_futuro = yf.Ticker("NQ=F")
-        preco_mnq = ticker_futuro.history(period="1d")["Close"].iloc[-1]
-    except:
-        preco_mnq = 19850.00  # Valor de backup caso a API falhe
-        
-    # 2. Puxamos o preço do QQQ para calcular o fator de proporção exato
-    try:
-        ticker_qqq = yf.Ticker("QQQ")
-        preco_qqq = ticker_qqq.history(period="1d")["Close"].iloc[-1]
-    except:
-        preco_qqq = 717.54
+# 1. Configuração da página em modo ultra-amplo (Wide Mode)
+st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-    # Fator de conversão (Ex: Se o NQ está 19850 e o QQQ está 717.54, o fator é ~27.66)
-    fator_conversao = preco_mnq / preco_qqq
-
-    # 3. Pegamos as barreiras institucionais do QQQ (InsiderFinance) e convertemos para o MNQ
-    call_wall_qqq = 730.00
-    put_wall_qqq = 650.00
-    zero_gamma_qqq = 709.86
-    
-    # Aplicação do fator quant nos pontos do MNQ
-    call_wall_mnq = call_wall_qqq * fator_conversao
-    put_wall_mnq = put_wall_qqq * fator_conversao
-    zero_gamma_mnq = zero_gamma_qqq * fator_conversao
-    
-    return preco_mnq, call_wall_mnq, put_wall_mnq, zero_gamma_mnq
-
-# Executar a busca de dados
-try:
-    preco_spot, call_wall, put_wall, zero_gamma = carregar_dados_mnq()
-    
-    # --- BLOCOS SUPERIORES DE MÉTRICAS ---
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric(label="MNQ Preço Atual (Pontos)", value=f"{preco_spot:,.2f}")
-    with col2:
-        st.metric(label="CALL WALL (Resistência Alvo)", value=f"{call_wall:,.2f}", delta="Ímã Institucional")
-    with col3:
-        st.metric(label="PUT WALL (Suporte Crítico)", value=f"{put_wall:,.2f}", delta="Zona de Defesa", delta_color="inverse")
-    with col4:
-        st.metric(label="Zero Gamma (Eixo de Pivô)", value=f"{zero_gamma:,.2f}")
-
-    st.caption("Análise quantitativa baseada na estrutura do mercado de opções convertida para o mercado futuro.")
-    st.markdown("---")
-
-    # Estilização CSS para fundo Blackout e métricas limpas
+# Estilização CSS para fundo Blackout e métricas limpas
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
@@ -104,6 +61,19 @@ try:
     call_wall_val = preco_spot + 120
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
+
+    # --- BLOCO SUPERIORES DE MÉTRICAS ---
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
+    with col2:
+        st.metric(label="CALL WALL (Resistência)", value=f"{call_wall_val:,.2f}")
+    with col3:
+        st.metric(label="PUT WALL (Suporte)", value=f"{put_wall_val:,.2f}")
+    with col4:
+        st.metric(label="Zero Gamma (Pivô)", value=f"{zero_gamma_val:,.2f}")
+
+    st.markdown("---")
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
     col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
