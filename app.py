@@ -153,4 +153,34 @@ try:
         fig_candles.add_hline(y=zero_gamma_val, line_color="#ffbb00", line_width=1.5, line_dash="dash",
                               annotation_text=f"ZERO GAMMA: {zero_gamma_val:,.0f}", annotation_position="top right")
         
-        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2,
+        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
+                              annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
+
+        y_min = min(df_candles['Low'].min(), put_wall_val)
+        y_max = max(df_candles['High'].max(), call_wall_val)
+        
+        fig_candles.update_layout(
+            title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
+            xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
+            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 20, y_max + 20], showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_candles, use_container_width=True)
+
+    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
+    with col_direita:
+        # INSTITUTIONAL FLOW (Gráfico Original Restaurado)
+        idx_max_pos_inst = np.argmax(inst_flow)
+        idx_min_neg_inst = np.argmin(inst_flow)
+        
+        cores_inst = []
+        for i, v in enumerate(inst_flow):
+            if i == idx_max_pos_inst:
+                cores_inst.append('#00ff88')
+            elif i == idx_min_neg_inst:
+                cores_inst.append('#ff3a60')
+            else:
+                cores_inst.append('#1a53ff')
+                
+        fig_inst = go.Figure()
+        fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
+        fig_inst.add_vline(x=preco_spot
