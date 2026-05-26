@@ -58,16 +58,16 @@ try:
     with col_grafico:
         st.subheader("Gráfico Profissional TradingView (Tempo Real - 5m)")
         
-        # Widget com correção de tamanho e foco direto no mini Nasdaq futuro (NQ1!)
+        # Código HTML/JavaScript do Widget Oficial do TradingView
+        # Configurado para puxar o contrato futuro do Nasdaq (NQ1!) no tempo gráfico de 5 minutos
         tradingview_widget = """
-        <div class="tradingview-widget-container" style="height:700px; width:100%;">
-          <div id="tradingview_nasdaq" style="height:700px;"></div>
+        <div class="tradingview-widget-container" style="height:100%;width:100%">
+          <div id="tradingview_nasdaq"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
           new TradingView.widget({
-            "width": "100%",
-            "height": 700,
-            "symbol": "NASDAQ:NQ1!",
+            "autosize": true,
+            "symbol": "CME_MINI:NQ1!",
             "interval": "5",
             "timezone": "America/New_York",
             "theme": "dark",
@@ -82,11 +82,11 @@ try:
           </script>
         </div>
         """
-        # Renderiza o componente com folga vertical para não comprimir
-        components.html(tradingview_widget, height=720)
+        # Renderiza o gráfico do TradingView na tela com 600px de altura
+        components.html(tradingview_widget, height=600)
 
     with col_lateral:
-        st.subheader("Estrategia Operacional")
+        st.subheader("Estratégia Operacional")
         
         if preco_spot > zero_gamma:
             st.success("🟢 **REGIME DE FLUXO:** Comprador (Positive Gamma). Mercado trabalhando na zona de proteção institucional. Quedas tendem a ser defendidas.")
