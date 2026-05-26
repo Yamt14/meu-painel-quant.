@@ -49,16 +49,21 @@ def carregar_dados_trading_desk_pro():
 try:
     preco_spot, df_candles, strikes, delta_gex, time_gex, inst_flow = carregar_dados_trading_desk_pro()
 
+    # Definição matemática estrita das barreiras baseadas no preço atual
+    call_wall_val = preco_spot + 120
+    put_wall_val = preco_spot - 150
+    zero_gamma_val = preco_spot - 25
+
     # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
     with col2:
-        st.metric(label="CALL WALL (Resistência)", value=f"{preco_spot + 240:,.2f}")
+        st.metric(label="CALL WALL (Resistência)", value=f"{call_wall_val:,.2f}")
     with col3:
-        st.metric(label="PUT WALL (Suporte)", value=f"{preco_spot - 310:,.2f}")
+        st.metric(label="PUT WALL (Suporte)", value=f"{put_wall_val:,.2f}")
     with col4:
-        st.metric(label="Zero Gamma (Pivô)", value=f"{preco_spot - 45:,.2f}")
+        st.metric(label="Zero Gamma (Pivô)", value=f"{zero_gamma_val:,.2f}")
 
     st.markdown("---")
 
@@ -67,18 +72,18 @@ try:
 
     # --- COLUNA ESQUERDA: DELTA HEDGING & TIME PRESSURE ---
     with col_esquerda:
-        # 1. DELTA HEDGING (Destaque Duplo: Verde e Vermelho)
-        idx_max_pos_delta = np.argmax(delta_gex)  # Maior valor positivo (Compra)
-        idx_min_neg_delta = np.argmin(delta_gex)  # Menor valor negativo (Venda)
+        # 1. DELTA HEDGING
+        idx_max_pos_delta = np.argmax(delta_gex)
+        idx_min_neg_delta = np.argmin(delta_gex)
         
         cores_delta = []
         for i, v in enumerate(delta_gex):
             if i == idx_max_pos_delta:
-                cores_delta.append('#00ff88')  # Verde Comprador
+                cores_delta.append('#00ff88')
             elif i == idx_min_neg_delta:
-                cores_delta.append('#ff3a60')  # Vermelho Vendedor
+                cores_delta.append('#ff3a60')
             else:
-                cores_delta.append('#2d31fa')  # Azul padrão para o resto
+                cores_delta.append('#1a53ff')
                 
         fig_delta = go.Figure()
         fig_delta.add_trace(go.Bar(x=strikes, y=delta_gex, marker_color=cores_delta, showlegend=False))
@@ -90,18 +95,18 @@ try:
         )
         st.plotly_chart(fig_delta, use_container_width=True)
 
-        # 2. TIME PRESSURE (Destaque Duplo: Verde e Vermelho)
+        # 2. TIME PRESSURE
         idx_max_pos_time = np.argmax(time_gex)
         idx_min_neg_time = np.argmin(time_gex)
         
         cores_time = []
         for i, v in enumerate(time_gex):
             if i == idx_max_pos_time:
-                cores_time.append('#00ff88')  # Verde Comprador
+                cores_time.append('#00ff88')
             elif i == idx_min_neg_time:
-                cores_time.append('#ff3a60')  # Vermelho Vendedor
+                cores_time.append('#ff3a60')
             else:
-                cores_time.append('#2d31fa')  # Azul padrão
+                cores_time.append('#1a53ff')
                 
         fig_time = go.Figure()
         fig_time.add_trace(go.Bar(x=strikes, y=time_gex, marker_color=cores_time, showlegend=False))
@@ -113,7 +118,7 @@ try:
         )
         st.plotly_chart(fig_time, use_container_width=True)
 
-    # --- COLUNA CENTRAL: GRÁFICO DE CANDLES AMPLO ---
+    # --- COLUNA CENTRAL: GRÁFICO DE CANDLES COM AS LINHAS DO MODELO MACRO ---
     with col_centro:
         fig_candles = go.Figure()
         fig_candles.add_trace(go.Candlestick(
@@ -122,15 +127,29 @@ try:
             low=df_candles['Low'], close=df_candles['Close'],
             name="MNQ 5m", increasing_line_color='#00ffc2', decreasing_line_color='#ff3a60'
         ))
-        y_min, y_max = df_candles['Low'].min(), df_candles['High'].max()
+
+        # Adicionando as 3 linhas de barreira institucionais horizontais (GEX Levels)
+        fig_candles.add_hline(y=call_wall_val, line_color="#00ff88", line_width=2, 
+                              annotation_text=f"CALL WALL: {call_wall_val:,.0f}", annotation_position="top right")
+        
+        fig_candles.add_hline(y=zero_gamma_val, line_color="#ffbb00", line_width=1.5, line_dash="dash",
+                              annotation_text=f"ZERO GAMMA: {zero_gamma_val:,.0f}", annotation_position="top right")
+        
+        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
+                              annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
+
+        # Configura a margem do zoom vertical para que as 3 linhas caibam perfeitamente na janela
+        y_min = min(df_candles['Low'].min(), put_wall_val)
+        y_max = max(df_candles['High'].max(), call_wall_val)
+        
         fig_candles.update_layout(
             title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
             xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
-            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 15, y_max + 15], showgrid=True, gridcolor='#222')
+            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 20, y_max + 20], showgrid=True, gridcolor='#222')
         )
         st.plotly_chart(fig_candles, use_container_width=True)
 
-    # --- COLUNA DIREITA: INSTITUTIONAL FLOW (Destaque Duplo) ---
+    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
     with col_direita:
         idx_max_pos_inst = np.argmax(inst_flow)
         idx_min_neg_inst = np.argmin(inst_flow)
@@ -138,11 +157,11 @@ try:
         cores_inst = []
         for i, v in enumerate(inst_flow):
             if i == idx_max_pos_inst:
-                cores_inst.append('#00ff88')  # Verde Comprador
+                cores_inst.append('#00ff88')
             elif i == idx_min_neg_inst:
-                cores_inst.append('#ff3a60')  # Vermelho Vendedor
+                cores_inst.append('#ff3a60')
             else:
-                cores_inst.append('#2d31fa')  # Azul padrão
+                cores_inst.append('#1a53ff')
                 
         fig_inst = go.Figure()
         fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
