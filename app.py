@@ -49,7 +49,7 @@ def carregar_dados_trading_desk_pro():
 try:
     preco_spot, df_candles, strikes, delta_gex, time_gex, inst_flow = carregar_dados_trading_desk_pro()
 
-    # --- BLOCO SUPERIORES DE MÉTRICAS (Como você gostou!) ---
+    # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
@@ -67,14 +67,18 @@ try:
 
     # --- COLUNA ESQUERDA: DELTA HEDGING & TIME PRESSURE ---
     with col_esquerda:
-        # 1. DELTA HEDGING com Destaque na Barra de Maior Volume
-        idx_max_delta = np.argmax(np.abs(delta_gex))
+        # 1. DELTA HEDGING (Destaque Duplo: Verde e Vermelho)
+        idx_max_pos_delta = np.argmax(delta_gex)  # Maior valor positivo (Compra)
+        idx_min_neg_delta = np.argmin(delta_gex)  # Menor valor negativo (Venda)
+        
         cores_delta = []
         for i, v in enumerate(delta_gex):
-            if i == idx_max_delta:
-                cores_delta.append('#00ff88') # Verde brilhante de destaque no pico
+            if i == idx_max_pos_delta:
+                cores_delta.append('#00ff88')  # Verde Comprador
+            elif i == idx_min_neg_delta:
+                cores_delta.append('#ff3a60')  # Vermelho Vendedor
             else:
-                cores_delta.append('#2d31fa' if v >= 0 else '#ff3a60') # Azul/Vermelho padrão do print
+                cores_delta.append('#2d31fa')  # Azul padrão para o resto
                 
         fig_delta = go.Figure()
         fig_delta.add_trace(go.Bar(x=strikes, y=delta_gex, marker_color=cores_delta, showlegend=False))
@@ -86,15 +90,19 @@ try:
         )
         st.plotly_chart(fig_delta, use_container_width=True)
 
-        # 2. TIME PRESSURE com Destaque de Pico
-        idx_max_time = np.argmax(np.abs(time_gex))
+        # 2. TIME PRESSURE (Destaque Duplo: Verde e Vermelho)
+        idx_max_pos_time = np.argmax(time_gex)
+        idx_min_neg_time = np.argmin(time_gex)
+        
         cores_time = []
         for i, v in enumerate(time_gex):
-            if i == idx_max_time:
-                cores_time.append('#00ff88')
+            if i == idx_max_pos_time:
+                cores_time.append('#00ff88')  # Verde Comprador
+            elif i == idx_min_neg_time:
+                cores_time.append('#ff3a60')  # Vermelho Vendedor
             else:
-                cores_time.append('#2d31fa' if v >= 0 else '#ff3a60')
-
+                cores_time.append('#2d31fa')  # Azul padrão
+                
         fig_time = go.Figure()
         fig_time.add_trace(go.Bar(x=strikes, y=time_gex, marker_color=cores_time, showlegend=False))
         fig_time.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
@@ -122,16 +130,20 @@ try:
         )
         st.plotly_chart(fig_candles, use_container_width=True)
 
-    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
+    # --- COLUNA DIREITA: INSTITUTIONAL FLOW (Destaque Duplo) ---
     with col_direita:
-        idx_max_inst = np.argmax(np.abs(inst_flow))
+        idx_max_pos_inst = np.argmax(inst_flow)
+        idx_min_neg_inst = np.argmin(inst_flow)
+        
         cores_inst = []
         for i, v in enumerate(inst_flow):
-            if i == idx_max_inst:
-                cores_inst.append('#00ff88')
+            if i == idx_max_pos_inst:
+                cores_inst.append('#00ff88')  # Verde Comprador
+            elif i == idx_min_neg_inst:
+                cores_inst.append('#ff3a60')  # Vermelho Vendedor
             else:
-                cores_inst.append('#2d31fa' if v >= 0 else '#ff3a60')
-
+                cores_inst.append('#2d31fa')  # Azul padrão
+                
         fig_inst = go.Figure()
         fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
         fig_inst.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
