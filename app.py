@@ -1,132 +1,89 @@
 import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import pandas as pd
 
-# Configuração da página estilo Trading Desk
-st.set_page_config(layout="wide", page_title="Painel Quant – MNQ 5m")
-st.title("📊 Painel Quant – MNQ Nasdaq 5 Minutos")
+# 1. Configuração da página estilo Trading Desk
+st.set_page_config(layout="wide", page_title="Painel Quantico Clone")
+st.title("📊 Painel Quant – Automação de Suportes e Resistências Dinâmicas")
 
-# Função para buscar os dados intradiários de 5m e fazer a conversão para o MNQ
-@st.cache_data(ttl=60)  # Atualiza a cada 1 minuto para o tempo gráfico de 5m ficar ágil
-def carregar_dados_mnq_5m():
-    # 1. Puxamos o histórico intradiário do contrato futuro
-    ticker_futuro = yf.Ticker("NQ=F")
+# Função para buscar e calcular os dados (com cache para ficar rápido)
+@st.cache_data(ttl=300)  # Atualiza a cada 5 minutos
+def carregar_dados_mercado():
+    ticker = yf.Ticker("QQQ")
     
-    try:
-        # Tenta puxar o dia atual em 5 minutos
-        df_futuro = ticker_futuro.history(period="1d", interval="5m")
-        if df_futuro.empty or len(df_futuro) < 5:
-            # Se o dia atual estiver vazio (mercado fechado/parado), puxa os últimos 5 dias para ter velas reais
-            df_futuro = ticker_futuro.history(period="5d", interval="5m")
-        preco_mnq = df_futuro["Close"].iloc[-1]
-    except:
-        # Se a API falhar completamente, usamos dados históricos mais estáveis de 1 dia como último recurso
-        df_futuro = ticker_futuro.history(period="1mo", interval="1d").tail(30)
-        preco_mnq = df_futuro["Close"].iloc[-1]
-        
-    # 2. Puxamos o preço do QQQ para calcular o fator de proporção exato
-    try:
-        ticker_qqq = yf.Ticker("QQQ")
-        preco_qqq = ticker_qqq.history(period="1d")["Close"].iloc[-1]
-    except:
-        preco_qqq = 717.62
-
-    # Fator de conversão dinâmico
-    fator_conversao = preco_mnq / preco_qqq
-
-    # 3. Barreiras institucionais do QQQ baseadas no InsiderFinance
-    call_wall_qqq = 730.00
-    put_wall_qqq = 650.00
-    zero_gamma_qqq = 709.86
+    # Preço atual do ETF
+    preco_atual = ticker.history(period="1d")["Close"].iloc[-1]
     
-    call_wall_mnq = call_wall_qqq * fator_conversao
-    put_wall_mnq = put_wall_qqq * fator_conversao
-    zero_gamma_mnq = zero_gamma_qqq * fator_conversao
+    # Pegar a data de expiração mais próxima com bastante liquidez
+    expiracoes = ticker.options
+    data_alvo = expiracoes[2] # Geralmente a terceira expiração da lista tem ótimo volume institucional
     
-    return preco_mnq, call_wall_mnq, put_wall_mnq, zero_gamma_mnq, df_futuro
+    grade_opcoes = ticker.option_chain(data_alvo)
+    calls = grade_opcoes.calls
+    puts = grade_opcoes.puts
+    
+    # Lógica Quant: Encontrar onde as instituições montaram as maiores barreiras (Walls)
+    call_wall_strike = calls.loc[calls['openInterest'].idxmax()]['strike']
+    put_wall_strike = puts.loc[puts['openInterest'].idxmax()]['strike']
+    
+    # Zero Gamma Aproximado (ponto médio de transição de liquidez perto do preço atual)
+    zero_gamma_aprox = (call_wall_strike + put_wall_strike) / 2
+    
+    return preco_atual, call_wall_strike, put_wall_strike, zero_gamma_aprox, data_alvo, calls, puts
 
 # Executar a busca de dados
 try:
-    preco_spot, call_wall, put_wall, zero_gamma, df_historico = carregar_dados_mnq_5m()
+    preco_spot, call_wall, put_wall, zero_gamma, vencimento, df_calls, df_puts = carregar_dados_mercado()
     
     # --- BLOCOS SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
+        st.metric(label="QQQ Preço Spot (Real)", value=f"${preco_spot:.2f}")
     with col2:
-        st.metric(label="CALL WALL (Resistência Máxima)", value=f"{call_wall:,.2f}", delta="Ímã Quântico")
+        st.metric(label="CALL WALL (Resistência Máxima)", value=f"${call_wall:.2f}")
     with col3:
-        st.metric(label="PUT WALL (Suporte Crítico)", value=f"{put_wall:,.2f}", delta="Zona de Defesa", delta_color="inverse")
+        st.metric(label="PUT WALL (Suporte Máximo)", value=f"${put_wall:.2f}")
     with col4:
-        st.metric(label="Zero Gamma (Linha de Pivô)", value=f"{zero_gamma:,.2f}")
+        st.metric(label="Gatilho de Volatilidade", value=f"${zero_gamma:.2f}")
 
-    st.caption("Gráfico dinâmico calibrado com as estruturas macro do mercado de opções.")
+    st.caption(f"Análise baseada no vencimento de opções de: **{vencimento}**")
     st.markdown("---")
 
-    # --- CORPO PRINCIPAL (Gráfico Central + Painel Lateral) ---
+    # --- CORPO PRINCIPAL (Gráfico Central + Fluxo de Liquidez) ---
     col_grafico, col_lateral = st.columns([3, 1])
 
     with col_grafico:
-        st.subheader("Candlesticks do Mercado Futuro")
+        st.subheader("Gráfico de Linhas Dinâmicas de Opções")
         
-        # Criando o painel duplo: Candles (topo) e Volume (rodapé)
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                            vertical_spacing=0.03, row_heights=[0.8, 0.2])
+        fig = go.Figure()
         
-        # Adicionando as velas
-        fig.add_trace(go.Candlestick(
-            x=df_historico.index,
-            open=df_historico['Open'],
-            high=df_historico['High'],
-            low=df_historico['Low'],
-            close=df_historico['Close'],
-            name="MNQ",
-            increasing_line_color='#00ffc2', decreasing_line_color='#ff3a60'
-        ), row=1, col=1)
+        # Plotar as linhas calculadas automaticamente pelo algoritmo
+        fig.add_hline(y=preco_spot, line_dash="dot", line_color="blue", line_width=2, annotation_text="Preço Spot Atual")
+        fig.add_hline(y=call_wall, line_color="green", line_width=4, annotation_text="CALL WALL (Muralha Vendedora)")
+        fig.add_hline(y=zero_gamma, line_dash="dash", line_color="yellow", line_width=2, annotation_text="Eixo de Pivô Quant")
+        fig.add_hline(y=put_wall, line_color="red", line_width=4, annotation_text="PUT WALL (Muralha Compradora)")
         
-        # Adicionando o volume no rodapé
-        fig.add_trace(go.Bar(
-            x=df_historico.index,
-            y=df_historico['Volume'],
-            name="Volume",
-            marker_color='#333',
-            showlegend=False
-        ), row=2, col=1)
-        
-        # Desenhando as linhas horizontais de barreiras institucionais
-        fig.add_hline(y=call_wall, line_color="green", line_width=3, annotation_text="CALL WALL", row=1, col=1)
-        fig.add_hline(y=zero_gamma, line_dash="dash", line_color="yellow", line_width=2, annotation_text="Zero Gamma", row=1, col=1)
-        fig.add_hline(y=put_wall, line_color="red", line_width=3, annotation_text="PUT WALL", row=1, col=1)
-        
-        # Ajuste inteligente de escala dinâmica do Eixo Y
-        y_min = df_historico['Low'].min()
-        y_max = df_historico['High'].max()
-        
-        # Customização estética do layout em modo escuro
+        # Ajustar o visual para modo escuro profissional
         fig.update_layout(
-            height=650,
-            template="plotly_dark",
-            xaxis_rangeslider_visible=False,
-            paper_bgcolor="#111",
-            plot_bgcolor="#111",
-            margin=dict(l=10, r=10, t=10, b=10)
+            height=500, 
+            template="plotly_dark", 
+            yaxis_range=[put_wall - 15, call_wall + 15],
+            paper_bgcolor="#111", 
+            plot_bgcolor="#111"
         )
-        
-        # Força o zoom do gráfico a focar apenas na variação real das velas
-        fig.update_yaxes(range=[y_min - 30, y_max + 30], row=1, col=1)
-        
         st.plotly_chart(fig, use_container_width=True)
 
     with col_lateral:
-        st.subheader("Análise Operacional 5m")
+        st.subheader("Estratégia Quantico")
         
+        # Tomada de decisão automatizada baseada no preço vs barreiras
         if preco_spot > zero_gamma:
-            st.success("🟢 **MERCADO EM ALTA (Positive Gamma):** O preço do MNQ está trabalhando acima do pivô quant. Favorece operações de compra de curto prazo em suportes dos 5 minutos.")
-            st.info(f"🎯 **Alvo Intradiário:** O viés macro é de alta mirando as resistências superiores em direção a {call_wall:,.0f} pontos.")
+            st.success("🟢 **REGIME:** Bullish/Positive Gamma. O mercado tende a segurar quedas e buscar a Call Wall.")
         else:
-            st.error("🔴 **MERCADO EM QUEDA (Negative Gamma):** O preço perdeu o pivô. A volatilidade intradiária tende a aumentar. Pense duas vezes antes de caçar fundos.")
-            st.warning(f"⚠️ **Risco:** Abaixo de {zero_gamma:,.0f} pontos, o mercado abre espaço para correções severas.")
+            st.error("🔴 **REGIME:** Bearish/Negative Gamma. Volatilidade pode acelerar em direção à Put Wall.")
+            
+        st.info(f"🎯 **Alvo de Atração:** O preço tende a ser atraído para os **${call_wall:.2f}** se houver volume comprador.")
 
 except Exception as e:
-    st.error(f"Erro ao processar dados do MNQ: {e}. Tente atualizar o painel.")
+    st.error(f"Erro ao conectar com a API de dados: {e}")
