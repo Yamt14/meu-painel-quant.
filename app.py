@@ -7,17 +7,17 @@ import pandas as pd
 # 1. Configuração da página em modo ultra-amplo (Wide Mode)
 st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Estilização CSS Avançada: Idêntica ao layout blackout do QQQ / InsiderFinance
+# Estilização CSS Avançada: Idêntica ao layout blackout do QQQ
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
         .block-container { padding-top: 1rem; padding-bottom: 0rem; }
         
-        /* Layout das Caixas do Topo (Estilo QQQ) */
+        /* Layout das Caixas do Topo Ultra-Compacto */
         .metric-row { display: flex; gap: 15px; margin-bottom: 10px; width: 100%; }
-        .metric-box { background-color: #050505; padding: 15px 20px; border-radius: 4px; border: 1px solid #15161a; flex: 1; }
-        .metric-title { color: #84858a; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-        .metric-value { color: #ffffff; font-size: 26px; font-family: monospace; font-weight: 700; }
+        .metric-box { background-color: #050505; padding: 12px 15px; border-radius: 4px; border: 1px solid #15161a; flex: 1; }
+        .metric-title { color: #84858a; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .metric-value { color: #ffffff; font-size: 24px; font-family: monospace; font-weight: 700; }
         
         /* Ajuste de espaçamento da linha divisória */
         hr { margin-top: 10px !important; margin-bottom: 15px !important; border-color: #15161a !important; }
@@ -62,11 +62,11 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-    # --- TOPO COMPACTO: Formatação Espelhada Perfeita do Grid do QQQ ---
+    # --- TOPO COMPACTO: Nomes curtos e limpos no padrão QQQ ---
     st.markdown(f"""
     <div class='metric-row'>
         <div class='metric-box'>
-            <div class='metric-title'>Spot Price (MNQ)</div>
+            <div class='metric-title'>Spot Price</div>
             <div class='metric-value'>${preco_spot:,.2f}</div>
         </div>
         <div class='metric-box'>
@@ -91,7 +91,7 @@ try:
 
     # --- COLUNA ESQUERDA: DELTA HEDGING & TIME PRESSURE ---
     with col_esquerda:
-        # 1. DELTA HEDGING (Gráfico Original Restaurado)
+        # 1. DELTA HEDGING
         idx_max_pos_delta = np.argmax(delta_gex)
         idx_min_neg_delta = np.argmin(delta_gex)
         
@@ -114,7 +114,7 @@ try:
         )
         st.plotly_chart(fig_delta, use_container_width=True)
 
-        # 2. TIME PRESSURE (Gráfico Original Restaurado)
+        # 2. TIME PRESSURE
         idx_max_pos_time = np.argmax(time_gex)
         idx_min_neg_time = np.argmin(time_gex)
         
@@ -150,4 +150,45 @@ try:
         fig_candles.add_hline(y=call_wall_val, line_color="#00ff88", line_width=2, 
                               annotation_text=f"CALL WALL: {call_wall_val:,.0f}", annotation_position="top right")
         
-        fig_candles.add_hline(y=
+        fig_candles.add_hline(y=zero_gamma_val, line_color="#ffbb00", line_width=1.5, line_dash="dash",
+                              annotation_text=f"ZERO GAMMA: {zero_gamma_val:,.0f}", annotation_position="top right")
+        
+        fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
+                              annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
+
+        y_min = min(df_candles['Low'].min(), put_wall_val)
+        y_max = max(df_candles['High'].max(), call_wall_val)
+        
+        fig_candles.update_layout(
+            title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
+            xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
+            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 20, y_max + 20], showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_candles, use_container_width=True)
+
+    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
+    with col_direita:
+        idx_max_pos_inst = np.argmax(inst_flow)
+        idx_min_neg_inst = np.argmin(inst_flow)
+        
+        cores_inst = []
+        for i, v in enumerate(inst_flow):
+            if i == idx_max_pos_inst:
+                cores_inst.append('#00ff88')
+            elif i == idx_min_neg_inst:
+                cores_inst.append('#ff3a60')
+            else:
+                cores_inst.append('#1a53ff')
+                
+        fig_inst = go.Figure()
+        fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
+        fig_inst.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_inst.update_layout(
+            title="INSTITUTIONAL FLOW", title_font_size=12, height=560, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_inst, use_container_width=True)
+
+except Exception as e:
+    st.error(f"Erro na montagem do Workspace: {e}")
