@@ -80,15 +80,29 @@ try:
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    with col_lateral:
-        st.subheader("Estratégia MNQ")
+# --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
+    with col_direita:
+        idx_max_pos_inst = np.argmax(inst_flow)
+        idx_min_neg_inst = np.argmin(inst_flow)
         
-        if preco_spot > zero_gamma:
-            st.success("🟢 **REGIME DE FLUXO:** Comprador (Positive Gamma). Os contratos futuros estão trabalhando na zona de proteção das instituições. Viés de alta para buscar as resistências.")
-            st.info(f"🎯 **Alvo de Pontos:** Mantendo-se acima de {zero_gamma:,.0f} pontos, o índice futuro busca estruturalmente a região de {call_wall:,.0f} pontos.")
-        else:
-            st.error("🔴 **REGIME DE FLUXO:** Vendedor (Negative Gamma). O preço perdeu o pivô quantitativo. Movimentos de queda tendem a acelerar rápido.")
-            st.warning(f"⚠️ **Risco Extremo:** Se o mercado acelerar abaixo de {zero_gamma:,.0f}, o suporte principal de longo prazo está apenas em {put_wall:,.0f} pontos.")
+        cores_inst = []
+        for i, v in enumerate(inst_flow):
+            if i == idx_max_pos_inst:
+                cores_inst.append('#00ff88')
+            elif i == idx_min_neg_inst:
+                cores_inst.append('#ff3a60')
+            else:
+                cores_inst.append('#1a53ff')
+                
+        fig_inst = go.Figure()
+        fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
+        fig_inst.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_inst.update_layout(
+            title="INSTITUTIONAL FLOW", title_font_size=12, height=560, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_inst, use_container_width=True)
 
 except Exception as e:
-    st.error(f"Erro ao processar dados do MNQ: {e}. Atualize a página em alguns instantes.")
+    st.error(f"Erro na montagem do Workspace: {e}")
