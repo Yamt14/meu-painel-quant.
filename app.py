@@ -17,23 +17,28 @@ st.markdown("""
         div[data-testid="stMetric"] {
             background-color: #050505 !important;
             border: 1px solid #15161a !important;
-            padding: 10px 15px !important;
+            padding: 12px 15px !important;
             border-radius: 4px !important;
         }
-        /* Alinha e colore o título (Cinza, maiúsculo e tamanho ajustado para não quebrar) */
-        div[data-testid="stMetricLabel"] p {
-            color: #84858a !important;
-            font-size: 11px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.5px !important;
+        /* Remove o espaço em branco do label nativo que foi desativado */
+        div[data-testid="stMetricLabel"] {
+            display: none !important;
         }
-        /* Formata o valor (Branco, monospace e negrito) */
+        /* Formata a linha única: Texto Cinza + Preço Branco */
         div[data-testid="stMetricValue"] div {
             color: #ffffff !important;
-            font-size: 24px !important;
+            font-size: 20px !important;
             font-family: monospace !important;
             font-weight: 700 !important;
+        }
+        /* Cria a cor cinza discreta para o título que vai ficar na frente */
+        .lbl {
+            color: #84858a !important;
+            font-size: 11px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            margin-right: 8px;
+            font-family: sans-serif !important;
         }
         
         /* Ajuste fino da linha divisória */
@@ -79,16 +84,16 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-    # --- TOPO RECALIBRADO: Títulos em português com o formato visual do QQQ ---
+    # --- TOPO REESTRUTURADO: Texto e preço na mesma linha via HTML para não sumir ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(label="MNQ Preço Atual", value=f"${preco_spot:,.2f}")
+        st.metric(label="", value=st.markdown(f"<span class='lbl'>MNQ ATUAL:</span> ${preco_spot:,.2f}", unsafe_allow_html=True))
     with col2:
-        st.metric(label="CALL WALL (Resistência)", value=f"${call_wall_val:,.2f}")
+        st.metric(label="", value=st.markdown(f"<span class='lbl'>CALL WALL:</span> ${call_wall_val:,.2f}", unsafe_allow_html=True))
     with col3:
-        st.metric(label="PUT WALL (Suporte)", value=f"${put_wall_val:,.2f}")
+        st.metric(label="", value=st.markdown(f"<span class='lbl'>PUT WALL:</span> ${put_wall_val:,.2f}", unsafe_allow_html=True))
     with col4:
-        st.metric(label="Zero Gamma (Pivô)", value=f"${zero_gamma_val:,.2f}")
+        st.metric(label="", value=st.markdown(f"<span class='lbl'>ZERO GAMMA:</span> ${zero_gamma_val:,.2f}", unsafe_allow_html=True))
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
