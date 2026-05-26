@@ -11,8 +11,10 @@ st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 st.markdown("""
     <style>
         body { background-color: #0b0c10; color: white; }
-        [data-testid="stMetricValue"] { font-size: 24px !important; font-family: monospace; }
         .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+        .metric-title { color: #888888; font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+        .metric-value { color: #ffffff; font-size: 24px; font-family: monospace; font-weight: bold; }
+        .metric-box { background-color: #111111; padding: 10px 15px; border-radius: 6px; border: 1px solid #222222; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -54,16 +56,28 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-    # --- BLOCO SUPERIORES DE MÉTRICAS ---
+    # --- NOVO BLOCO SUPERIOR DE MÉTRICAS (Forçado via HTML/Markdown para nunca sumir) ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
+        st.markdown(f"""<div class='metric-box'>
+            <div class='metric-title'>MNQ PREÇO ATUAL</div>
+            <div class='metric-value'>{preco_spot:,.2f}</div>
+        </div>""", unsafe_allow_html=True)
     with col2:
-        st.metric(label="CALL WALL (Resistência)", value=f"{call_wall_val:,.2f}")
+        st.markdown(f"""<div class='metric-box'>
+            <div class='metric-title'>CALL WALL (RESISTÊNCIA)</div>
+            <div class='metric-value'>{call_wall_val:,.2f}</div>
+        </div>""", unsafe_allow_html=True)
     with col3:
-        st.metric(label="PUT WALL (Suporte)", value=f"{put_wall_val:,.2f}")
+        st.markdown(f"""<div class='metric-box'>
+            <div class='metric-title'>PUT WALL (SUPORTE)</div>
+            <div class='metric-value'>{put_wall_val:,.2f}</div>
+        </div>""", unsafe_allow_html=True)
     with col4:
-        st.metric(label="Zero Gamma (Pivô)", value=f"{zero_gamma_val:,.2f}")
+        st.markdown(f"""<div class='metric-box'>
+            <div class='metric-title'>ZERO GAMMA (PIVÔ)</div>
+            <div class='metric-value'>{zero_gamma_val:,.2f}</div>
+        </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
 
