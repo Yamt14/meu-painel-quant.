@@ -54,16 +54,16 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-    # --- BLOCO SUPERIORES DE MÉTRICAS ---
+    # --- BLOCO SUPERIORES DE MÉTRICAS (Labels completas restauradas) ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
     with col2:
-        st.metric(label="CALL WALL (Resistência)", value=f"{call_wall_val:,.2f}")
+        st.metric(label="CALL WALL (Resistência Alvo / Teto)", value=f"{call_wall_val:,.2f}")
     with col3:
-        st.metric(label="PUT WALL (Suporte)", value=f"{put_wall_val:,.2f}")
+        st.metric(label="PUT WALL (Suporte Crítico / Chão)", value=f"{put_wall_val:,.2f}")
     with col4:
-        st.metric(label="Zero Gamma (Pivô)", value=f"{zero_gamma_val:,.2f}")
+        st.metric(label="Zero Gamma (Eixo de Pivô Quant)", value=f"{zero_gamma_val:,.2f}")
 
     st.markdown("---")
 
@@ -87,7 +87,7 @@ try:
                 
         fig_delta = go.Figure()
         fig_delta.add_trace(go.Bar(x=strikes, y=delta_gex, marker_color=cores_delta, showlegend=False))
-        fig_delta.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_delta.add_hline(y=0, line_color="rgba(255,255,255,0.2)", line_width=1) # Linha horizontal de equilíbrio
         fig_delta.update_layout(
             title="DELTA HEDGING", title_font_size=12, height=270, template="plotly_dark",
             paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
@@ -110,7 +110,7 @@ try:
                 
         fig_time = go.Figure()
         fig_time.add_trace(go.Bar(x=strikes, y=time_gex, marker_color=cores_time, showlegend=False))
-        fig_time.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_time.add_hline(y=0, line_color="rgba(255,255,255,0.2)", line_width=1)
         fig_time.update_layout(
             title="TIME PRESSURE", title_font_size=12, height=270, template="plotly_dark",
             paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
@@ -128,7 +128,7 @@ try:
             name="MNQ 5m", increasing_line_color='#00ffc2', decreasing_line_color='#ff3a60'
         ))
 
-        # Adicionando as 3 linhas de barreira institucionais horizontais (GEX Levels)
+        # Linhas de barreira horizontais baseadas no print
         fig_candles.add_hline(y=call_wall_val, line_color="#00ff88", line_width=2, 
                               annotation_text=f"CALL WALL: {call_wall_val:,.0f}", annotation_position="top right")
         
@@ -138,7 +138,6 @@ try:
         fig_candles.add_hline(y=put_wall_val, line_color="#ff3a60", line_width=2, 
                               annotation_text=f"PUT WALL: {put_wall_val:,.0f}", annotation_position="bottom right")
 
-        # Configura a margem do zoom vertical para que as 3 linhas caibam perfeitamente na janela
         y_min = min(df_candles['Low'].min(), put_wall_val)
         y_max = max(df_candles['High'].max(), call_wall_val)
         
@@ -165,7 +164,7 @@ try:
                 
         fig_inst = go.Figure()
         fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
-        fig_inst.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_inst.add_hline(y=0, line_color="rgba(255,255,255,0.2)", line_width=1)
         fig_inst.update_layout(
             title="INSTITUTIONAL FLOW", title_font_size=12, height=560, template="plotly_dark",
             paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
