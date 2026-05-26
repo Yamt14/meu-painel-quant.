@@ -3,7 +3,7 @@ import yfinance as yf
 import streamlit.components.v1 as components
 
 # Configuração da página estilo Trading Desk
-st.set_page_config(layout="wide", page_title="Painel Quant – MNQ")
+st.set_page_config(layout="wide", page_title="Painel Quant – MNQ TradingView")
 st.title("📊 Painel Quant – MNQ Nasdaq Live TradingView")
 
 # Função para buscar os dados macros e calcular as barreiras no MNQ
@@ -58,7 +58,7 @@ try:
     with col_grafico:
         st.subheader("Gráfico Profissional TradingView (Tempo Real - 5m)")
         
-        # CORREÇÃO CRUCIAL: "symbol": "NASDAQ:NDX" puxa o índice Nasdaq-100 real e gratuito
+        # Widget atualizado com a exchange oficial CME e o contrato Micro MNQ1!
         tradingview_widget = """
         <div class="tradingview-widget-container" style="height:700px; width:100%;">
           <div id="tradingview_nasdaq" style="height:700px;"></div>
@@ -67,7 +67,7 @@ try:
           new TradingView.widget({
             "width": "100%",
             "height": 700,
-            "symbol": "NASDAQ:NDX",
+            "symbol": "CME:MNQ1!",
             "interval": "5",
             "timezone": "America/New_York",
             "theme": "dark",
@@ -101,3 +101,4 @@ try:
 
 except Exception as e:
     st.error(f"Erro ao carregar os componentes do painel: {e}")
+    
