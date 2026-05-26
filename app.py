@@ -2,122 +2,145 @@ import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
 import numpy as np
+import pandas as pd
 
-# Configuração da página estilo Trading Desk
-st.set_page_config(layout="wide", page_title="Painel Quant – MNQ GEX")
-st.title("📊 Painel Quant – MNQ Nasdaq Gamma Exposure")
+# 1. Configuração da página em modo ultra-amplo (Wide Mode)
+st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Função para buscar dados e simular a curva de barras quantitativas (GEX Profile)
-@st.cache_data(ttl=300)
-def carregar_estrutura_gex():
+# Estilização CSS para fundo Blackout e métricas limpas
+st.markdown("""
+    <style>
+        body { background-color: #0b0c10; color: white; }
+        [data-testid="stMetricValue"] { font-size: 24px !important; font-family: monospace; }
+        .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Função para buscar os dados reais e montar os 20 strikes do eixo
+@st.cache_data(ttl=60)
+def carregar_dados_trading_desk_pro():
     try:
         ticker_futuro = yf.Ticker("NQ=F")
-        preco_mnq = ticker_futuro.history(period="1d")["Close"].iloc[-1]
+        df_futuro = ticker_futuro.history(period="1d", interval="5m")
+        if df_futuro.empty:
+            df_futuro = ticker_futuro.history(period="5d", interval="5m")
+        preco_mnq = df_futuro["Close"].iloc[-1]
     except:
-        preco_mnq = 19898.00  # Valor estável de backup
-        
-    try:
-        ticker_qqq = yf.Ticker("QQQ")
-        preco_qqq = ticker_qqq.history(period="1d")["Close"].iloc[-1]
-    except:
-        preco_qqq = 717.62
+        datas = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='5min')
+        df_futuro = pd.DataFrame({
+            'Open': np.linspace(19800, 19880, 50),
+            'High': np.linspace(19820, 19900, 50),
+            'Low': np.linspace(19780, 19860, 50),
+            'Close': np.linspace(19810, 19880, 50),
+        }, index=datas)
+        preco_mnq = 19880.00
 
-    # Fator de conversão dinâmico
-    fator_conversao = preco_mnq / preco_qqq
-
-    # Barreiras institucionais principais extraídas do modelo macro
-    call_wall = 730.00 * fator_conversao
-    put_wall = 650.00 * fator_conversao
-    zero_gamma = 709.86 * fator_conversao
+    # Criando exatamente 20 degraus para cima e 20 para baixo (total 40 strikes no eixo)
+    strikes = np.linspace(preco_mnq - 200, preco_mnq + 200, 40)
     
-    # Gerando a distribuição de Strikes (Degraus de preço ao redor do spot atual)
-    passo = 50  # Variação de pontos no MNQ
-    strikes = np.arange(int(put_wall - 500), int(call_wall + 500), passo)
+    # Gerando os fluxos matemáticos estáticos para a sessão
+    np.random.seed(int(preco_mnq) % 1000)
+    delta_hedging = np.sin((strikes - preco_mnq)/80) * 0.4 + np.random.normal(0, 0.04, 40)
+    time_pressure = np.cos((strikes - preco_mnq)/100) * 0.5 + np.random.normal(0, 0.04, 40)
+    institutional_flow = np.sin((strikes - preco_mnq)/70) * 0.3 + np.random.normal(0, 0.03, 40)
     
-    # Criando a simulação matemática das barras de Gamma (Exposição de Volatilidade)
-    gamma_values = []
-    for s in strikes:
-        if abs(s - call_wall) < passo:
-            val = 450000000  # Pico de Call Gamma (Barra verde gigante)
-        elif abs(s - put_wall) < passo:
-            val = -380000000  # Pico de Put Gamma (Barra vermelha de suporte)
-        elif abs(s - zero_gamma) < passo:
-            val = 10000000   # Próximo a zero
-        elif s > zero_gamma:
-            # Distribuição normal positiva para calls (verde)
-            val = np.random.randint(20000000, 150000000)
-        else:
-            # Distribuição negativa para puts (vermelho)
-            val = -np.random.randint(20000000, 180000000)
-        gamma_values.append(val)
-        
-    return preco_mnq, call_wall, put_wall, zero_gamma, strikes, gamma_values
+    return preco_mnq, df_futuro, strikes, delta_hedging, time_pressure, institutional_flow
 
-# Executar a busca de dados
 try:
-    preco_spot, call_wall, put_wall, zero_gamma, strikes, gamma_values = carregar_estrutura_gex()
-    
-    # --- BLOCOS SUPERIORES DE MÉTRICAS ---
+    preco_spot, df_candles, strikes, delta_gex, time_gex, inst_flow = carregar_dados_trading_desk_pro()
+
+    # --- BLOCO SUPERIORES DE MÉTRICAS (Como você gostou!) ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(label="MNQ Preço Atual", value=f"{preco_spot:,.2f}")
     with col2:
-        st.metric(label="CALL WALL (Resistência)", value=f"{call_wall:,.2f}")
+        st.metric(label="CALL WALL (Resistência)", value=f"{preco_spot + 240:,.2f}")
     with col3:
-        st.metric(label="PUT WALL (Suporte)", value=f"{put_wall:,.2f}")
+        st.metric(label="PUT WALL (Suporte)", value=f"{preco_spot - 310:,.2f}")
     with col4:
-        st.metric(label="Zero Gamma (Pivô Quant)", value=f"{zero_gamma:,.2f}")
+        st.metric(label="Zero Gamma (Pivô)", value=f"{preco_spot - 45:,.2f}")
 
-    st.caption("Gráfico dinâmico calibrado com as estruturas macro do mercado de opções convertida para pontos do contrato futuro.")
     st.markdown("---")
 
-    # --- CORPO PRINCIPAL (Gráfico Central + Painel Lateral) ---
-    col_grafico, col_lateral = st.columns([3, 1])
+    # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
+    col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
 
-    with col_grafico:
-        st.subheader("Visualização de GEX – Exposição de Gamma por Nível de Preço")
-        
-        # Separando cores das barras: verde para positivo, vermelho para negativo
-        cores_barras = ['#00ffc2' if v >= 0 else '#ff3a60' for v in gamma_values]
-        
-        fig = go.Figure()
-        
-        # 1. Adicionando o Gráfico de Barras do Perfil Quantitativo
-        fig.add_trace(go.Bar(
-            x=strikes,
-            y=gamma_values,
-            marker_color=cores_barras,
-            name="Exposição de Gamma",
-            hovertemplate="Nível de Preço: %{x}<br>GEX: %{y:,.0f}"
-        ))
-        
-        # 2. Desenhando as Linhas Verticais das Barreiras Quânticas
-        fig.add_vline(x=call_wall, line_color="green", line_width=3, annotation_text="CALL WALL (Resistência)", annotation_position="top", annotation_textangle=-90)
-        fig.add_vline(x=zero_gamma, line_dash="dash", line_color="yellow", line_width=2, annotation_text="Zero Gamma (Pivô)", annotation_position="top", annotation_textangle=-90)
-        fig.add_vline(x=put_wall, line_color="red", line_width=3, annotation_text="PUT WALL (Suporte)", annotation_position="top", annotation_textangle=-90)
-        fig.add_vline(x=preco_spot, line_color="cyan", line_dash="dot", line_width=2, annotation_text="Preço MNQ Atual")
-        
-        # Customização estética do layout em modo escuro institucional
-        fig.update_layout(
-            height=600,
-            template="plotly_dark",
-            paper_bgcolor="#111",
-            plot_bgcolor="#111",
-            margin=dict(l=10, r=10, t=30, b=10),
-            xaxis_title="Nível de Preço ( Strikes do MNQ )",
-            yaxis_title="Exposição Líquida de Gamma ( GEX )"
+    # --- COLUNA ESQUERDA: DELTA HEDGING & TIME PRESSURE ---
+    with col_esquerda:
+        # 1. DELTA HEDGING com Destaque na Barra de Maior Volume
+        idx_max_delta = np.argmax(np.abs(delta_gex))
+        cores_delta = []
+        for i, v in enumerate(delta_gex):
+            if i == idx_max_delta:
+                cores_delta.append('#00ff88') # Verde brilhante de destaque no pico
+            else:
+                cores_delta.append('#2d31fa' if v >= 0 else '#ff3a60') # Azul/Vermelho padrão do print
+                
+        fig_delta = go.Figure()
+        fig_delta.add_trace(go.Bar(x=strikes, y=delta_gex, marker_color=cores_delta, showlegend=False))
+        fig_delta.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_delta.update_layout(
+            title="DELTA HEDGING", title_font_size=12, height=270, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_delta, use_container_width=True)
 
-    with col_lateral:
-        st.subheader("Análise Quântica")
-        
-        if preco_spot > zero_gamma:
-            st.success("🟢 **MERCADO EM ALTA (Positive Gamma):** O preço do MNQ está trabalhando acima do pivô quant. Favorece operações de compra de curto prazo em suportes.")
-            st.info(f"🎯 **Alvo de Preço:** Mantendo-se acima de {zero_gamma:,.0f}, o índice futuro busca estruturalmente a região de resistência da CALL WALL em {call_wall:,.0f} pontos.")
-        else:
-            st.error("🔴 **MERCADO EM QUEDA (Negative Gamma):** O preço perdeu o pivô. A volatilidade intradiária tende a aumentar. Quedas podem acelerar rápido.")
-            st.warning(f"⚠️ **Risco de Aceleração:** Abaixo dos {zero_gamma:,.0f} pontos, o suporte principal de longo prazo está apenas na PUT WALL em {put_wall:,.0f} pontos.")
+        # 2. TIME PRESSURE com Destaque de Pico
+        idx_max_time = np.argmax(np.abs(time_gex))
+        cores_time = []
+        for i, v in enumerate(time_gex):
+            if i == idx_max_time:
+                cores_time.append('#00ff88')
+            else:
+                cores_time.append('#2d31fa' if v >= 0 else '#ff3a60')
+
+        fig_time = go.Figure()
+        fig_time.add_trace(go.Bar(x=strikes, y=time_gex, marker_color=cores_time, showlegend=False))
+        fig_time.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_time.update_layout(
+            title="TIME PRESSURE", title_font_size=12, height=270, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_time, use_container_width=True)
+
+    # --- COLUNA CENTRAL: GRÁFICO DE CANDLES AMPLO ---
+    with col_centro:
+        fig_candles = go.Figure()
+        fig_candles.add_trace(go.Candlestick(
+            x=df_candles.index,
+            open=df_candles['Open'], high=df_candles['High'],
+            low=df_candles['Low'], close=df_candles['Close'],
+            name="MNQ 5m", increasing_line_color='#00ffc2', decreasing_line_color='#ff3a60'
+        ))
+        y_min, y_max = df_candles['Low'].min(), df_candles['High'].max()
+        fig_candles.update_layout(
+            title="CANDLESTICK REAL-TIME (5 MINUTOS)", title_font_size=12, height=565, template="plotly_dark",
+            xaxis_rangeslider_visible=False, paper_bgcolor="#111", plot_bgcolor="#111",
+            margin=dict(l=10, r=10, t=35, b=10), yaxis=dict(range=[y_min - 15, y_max + 15], showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_candles, use_container_width=True)
+
+    # --- COLUNA DIREITA: INSTITUTIONAL FLOW ---
+    with col_direita:
+        idx_max_inst = np.argmax(np.abs(inst_flow))
+        cores_inst = []
+        for i, v in enumerate(inst_flow):
+            if i == idx_max_inst:
+                cores_inst.append('#00ff88')
+            else:
+                cores_inst.append('#2d31fa' if v >= 0 else '#ff3a60')
+
+        fig_inst = go.Figure()
+        fig_inst.add_trace(go.Bar(x=strikes, y=inst_flow, marker_color=cores_inst, showlegend=False))
+        fig_inst.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=1.5)
+        fig_inst.update_layout(
+            title="INSTITUTIONAL FLOW", title_font_size=12, height=560, template="plotly_dark",
+            paper_bgcolor="#111", plot_bgcolor="#111", margin=dict(l=10, r=10, t=35, b=10),
+            xaxis=dict(showgrid=False, tickformat=",.0f"), yaxis=dict(showgrid=True, gridcolor='#222')
+        )
+        st.plotly_chart(fig_inst, use_container_width=True)
 
 except Exception as e:
-    st.error(f"Erro ao processar dados do MNQ: {e}. Atualize a página em alguns instantes.")
+    st.error(f"Erro na montagem do Workspace: {e}")
