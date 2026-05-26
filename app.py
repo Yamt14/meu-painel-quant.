@@ -43,7 +43,7 @@ try:
     preco_spot, call_wall, put_wall, zero_gamma = carregar_dados_mnq()
     
     # --- BLOCOS SUPERIORES DE MÉTRICAS ---
-    col1, col2, col3, col4 , col5= st.columns(5)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric(label="MNQ Preço Atual (Pontos)", value=f"{preco_spot:,.2f}")
     with col2:
@@ -52,16 +52,6 @@ try:
         st.metric(label="PUT WALL (Suporte Crítico)", value=f"{put_wall:,.2f}", delta="Zona de Defesa", delta_color="inverse")
     with col4:
         st.metric(label="Zero Gamma (Eixo de Pivô)", value=f"{zero_gamma:,.2f}")
-         with col5:
-        st.metric(label="Strategy MNQ ",
-                  if preco_spot > zero_gamma:
-            st.success("🟢 **REGIME DE FLUXO:** Comprador (Positive Gamma). Os contratos futuros estão trabalhando na zona de proteção das instituições. Viés de alta para buscar as resistências.")
-            st.info(f"🎯 **Alvo de Pontos:** Mantendo-se acima de {zero_gamma:,.0f} pontos, o índice futuro busca estruturalmente a região de {call_wall:,.0f} pontos.")
-        else:
-            st.error("🔴 **REGIME DE FLUXO:** Vendedor (Negative Gamma). O preço perdeu o pivô quantitativo. Movimentos de queda tendem a acelerar rápido.")
-            st.warning(f"⚠️ **Risco Extremo:** Se o mercado acelerar abaixo de {zero_gamma:,.0f}, o suporte principal de longo prazo está apenas em {put_wall:,.0f} pontos.")
-{zero_gamma:,.2f}")
-   
 
     st.caption("Análise quantitativa baseada na estrutura do mercado de opções convertida para o mercado futuro.")
     st.markdown("---")
