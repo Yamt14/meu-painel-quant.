@@ -54,21 +54,12 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-  # --- BLOCO SUPERIORES DE MÉTRICAS ---
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("<div style='font-size: 12px; color: #888;'>MNQ PREÇO ATUAL</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{preco_spot:,.2f}")
-    with col2:
-        st.markdown("<div style='font-size: 12px; color: #888;'>CALL WALL</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{call_wall_val:,.2f}")
-    with col3:
-        st.markdown("<div style='font-size: 12px; color: #888;'>PUT WALL</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{put_wall_val:,.2f}")
-    with col4:
-        st.markdown("<div style='font-size: 12px; color: #888;'>ZERO GAMMA</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{zero_gamma_val:,.2f}")
+ # --- Bloco do Topo ---
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("MNQ ATUAL", "$30,144.25")
+c2.metric("CALL WALL", "$30,264.25")
+c3.metric("PUT WALL", "$29,994.25")
+c4.metric("ZERO GAMMA", "$30,119.25")
 
     st.markdown("---")
 
