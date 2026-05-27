@@ -57,16 +57,16 @@ try:
 # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.subheader("MNQ PREÇO ATUAL")
+        st.markdown("<p style='margin: 0; font-size: 14px;'>MNQ PREÇO ATUAL</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{preco_spot:,.2f}")
     with col2:
-        st.subheader("CALL WALL")
+        st.markdown("<p style='margin: 0; font-size: 14px;'>CALL WALL</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{call_wall_val:,.2f}")
     with col3:
-        st.subheader("PUT WALL")
+        st.markdown("<p style='margin: 0; font-size: 14px;'>PUT WALL</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{put_wall_val:,.2f}")
     with col4:
-        st.subheader("ZERO GAMMA")
+        st.markdown("<p style='margin: 0; font-size: 14px;'>ZERO GAMMA</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{zero_gamma_val:,.1f}")
         
     st.markdown("---")
