@@ -68,6 +68,7 @@ try:
     with col4:
         st.subheader("ZERO GAMMA")
         st.metric(label="", value=f"{zero_gamma_val:,.1f}")
+        
     st.markdown("---")
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
