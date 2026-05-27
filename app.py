@@ -54,19 +54,19 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-   # --- BLOCO SUPERIORES DE MÉTRICAS ---
+ # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.write("MNQ PREÇO ATUAL")
+        st.markdown("<div style='font-size: 14px; color: white;'>MNQ PREÇO ATUAL</div>", unsafe_allow_html=True)
         st.metric(label="", value=f"{preco_spot:,.2f}")
     with col2:
-        st.write("CALL WALL (Resistência)")
+        st.markdown("<div style='font-size: 14px; color: white;'>CALL WALL (Resistência)</div>", unsafe_allow_html=True)
         st.metric(label="", value=f"{call_wall_val:,.2f}")
     with col3:
-        st.write("PUT WALL (Suporte)")
+        st.markdown("<div style='font-size: 14px; color: white;'>PUT WALL (Suporte)</div>", unsafe_allow_html=True)
         st.metric(label="", value=f"{put_wall_val:,.2f}")
     with col4:
-        st.write("ZERO GAMMA (Pivô)")
+        st.markdown("<div style='font-size: 14px; color: white;'>ZERO GAMMA (Pivô)</div>", unsafe_allow_html=True)
         st.metric(label="", value=f"{zero_gamma_val:,.2f}")
 
     st.markdown("---")
