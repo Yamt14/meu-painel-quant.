@@ -34,15 +34,7 @@ def carregar_dados_trading_desk_pro():
             'Close': np.linspace(19810, 19880, 50),
         }, index=datas)
         preco_mnq = 19880.00
-
-    # --- Bloco do Topo ---
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("MNQ ATUAL", "$30,144.25")
-c2.metric("CALL WALL", "$30,264.25")
-c3.metric("PUT WALL", "$29,994.25")
-c4.metric("ZERO GAMMA", "$30,119.25")
-st.markdown("---")
-
+        
     # Criando exatamente 20 degraus para cima e 20 para baixo (total 40 strikes no eixo)
     strikes = np.linspace(preco_mnq - 200, preco_mnq + 200, 40)
     
