@@ -67,7 +67,7 @@ try:
         st.metric(label="", value=f"{put_wall_val:,.2f}")
     with col4:
         st.subheader("   ZERO GAMMA (Pivô)")
-        st.metric(label="", value=f"{zero_gamma_val:,.2f}")
+        st.metric(label="", value=f"{zero_gamma_val:,.1f}")
     st.markdown("---")
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
