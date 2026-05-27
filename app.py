@@ -6,7 +6,6 @@ import pandas as pd
 
 st.set_page_config(layout="wide", page_title="Painel Quant Pro")
 
-# Função de dados
 @st.cache_data(ttl=60)
 def carregar_dados():
     try:
@@ -18,7 +17,6 @@ def carregar_dados():
         df = pd.DataFrame({'Open': [30000], 'High': [30200], 'Low': [29900], 'Close': [30140]}, index=[pd.Timestamp.now()])
     
     strikes = np.linspace(preco - 200, preco + 200, 40)
-    # Gerando dados baseados em volatilidade
     vol = df["Close"].pct_change().std() * 10
     np.random.seed(int(preco))
     delta = np.random.normal(0, vol, 40)
@@ -28,28 +26,28 @@ def carregar_dados():
 
 preco_spot, df, strikes, delta, time, flow = carregar_dados()
 
-# --- TOPO SIMPLIFICADO (Sem erro de CSS) ---
+# Topo
 c1, c2, c3, c4 = st.columns(4)
-c1.subheader("MNQ ATUAL")
-c1.metric("", f"${preco_spot:,.2f}")
-c2.subheader("CALL WALL")
-c2.metric("", f"${preco_spot + 120:,.2f}")
-c3.subheader("PUT WALL")
-c3.metric("", f"${preco_spot - 150:,.2f}")
-c4.subheader("ZERO GAMMA")
-c4.metric("", f"${preco_spot - 25:,.2f}")
+c1.subheader("MNQ ATUAL"); c1.metric("", f"${preco_spot:,.2f}")
+c2.subheader("CALL WALL"); c2.metric("", f"${preco_spot + 120:,.2f}")
+c3.subheader("PUT WALL"); c3.metric("", f"${preco_spot - 150:,.2f}")
+c4.subheader("ZERO GAMMA"); c4.metric("", f"${preco_spot - 25:,.2f}")
 
 st.markdown("---")
 
-# --- GRÁFICOS ---
+# Gráficos com elementos visuais restaurados
 col_e, col_c, col_d = st.columns([1, 2.2, 1])
 
 with col_e:
-    fig = go.Figure(go.Bar(x=strikes, y=delta, marker_color='#1a53ff'))
-    fig.update_layout(title="DELTA HEDGING", template="plotly_dark", height=270, paper_bgcolor="#000", plot_bgcolor="#000")
-    st.plotly_chart(fig, use_container_width=True)
+    # Delta com Linha Central e Cores
+    fig_d = go.Figure(go.Bar(x=strikes, y=delta, marker_color=['#00ff88' if x > 0 else '#ff3a60' for x in delta]))
+    fig_d.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=2)
+    fig_d.update_layout(title="DELTA HEDGING", template="plotly_dark", height=270, paper_bgcolor="#000", plot_bgcolor="#000")
+    st.plotly_chart(fig_d, use_container_width=True)
 
+    # Time Pressure com Linha Central
     fig_t = go.Figure(go.Bar(x=strikes, y=time, marker_color='#1a53ff'))
+    fig_t.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=2)
     fig_t.update_layout(title="TIME PRESSURE", template="plotly_dark", height=270, paper_bgcolor="#000", plot_bgcolor="#000")
     st.plotly_chart(fig_t, use_container_width=True)
 
@@ -59,6 +57,8 @@ with col_c:
     st.plotly_chart(fig_c, use_container_width=True)
 
 with col_d:
+    # Flow com Linha Central e Cores
     fig_i = go.Figure(go.Bar(x=strikes, y=flow, marker_color=['#00ff88' if x > 0 else '#ff3a60' for x in flow]))
+    fig_i.add_vline(x=preco_spot, line_dash="dash", line_color="cyan", line_width=2)
     fig_i.update_layout(title="INSTITUTIONAL FLOW", template="plotly_dark", height=560, paper_bgcolor="#000", plot_bgcolor="#000")
     st.plotly_chart(fig_i, use_container_width=True)
