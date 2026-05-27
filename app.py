@@ -54,23 +54,22 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-# --- TÍTULO DO PAINEL ---
-    st.markdown("<h1 style='text-align: center; font-size: 32px;'>PAINEL QUANT PRO 📊</h1>", unsafe_allow_html=True)
-    st.write("") 
-    st.write("") 
-
- # --- BLOCO SUPERIORES DE MÉTRICAS ---
-    st.markdown("<h1 style='text-align: center; font-size: 32px;'>PAINEL QUANT PRO 📊</h1>", unsafe_allow_html=True)
-    st.write("") 
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    col1.markdown(f"<div style='text-align: center;'>MNQ PREÇO ATUAL<br><span style='font-size: 32px; font-family: monospace; font-weight: bold;'>{preco_spot:,.2f}</span></div>", unsafe_allow_html=True)
-    col2.markdown(f"<div style='text-align: center;'>CALL WALL<br><span style='font-size: 32px; font-family: monospace; font-weight: bold;'>{call_wall_val:,.2f}</span></div>", unsafe_allow_html=True)
-    col3.markdown(f"<div style='text-align: center;'>PUT WALL<br><span style='font-size: 32px; font-family: monospace; font-weight: bold;'>{put_wall_val:,.2f}</span></div>", unsafe_allow_html=True)
-    col4.markdown(f"<div style='text-align: center;'>ZERO GAMMA<br><span style='font-size: 32px; font-family: monospace; font-weight: bold;'>{zero_gamma_val:,.2f}</span></div>", unsafe_allow_html=True)
-
-    st.markdown("---")
+# --- CABEÇALHO E MÉTRICAS EM UMA ÚNICA TABELA HTML ---
+    st.markdown(f"""
+        <div style='text-align: center;'>
+            <h1 style='font-size: 32px;'>PAINEL QUANT PRO 📊</h1>
+            <br>
+            <table style='width:100%; border:none;'>
+                <tr>
+                    <td style='text-align:center;'>MNQ PREÇO ATUAL<br><b style='font-size:28px; font-family:monospace;'>{preco_spot:,.2f}</b></td>
+                    <td style='text-align:center;'>CALL WALL<br><b style='font-size:28px; font-family:monospace;'>{call_wall_val:,.2f}</b></td>
+                    <td style='text-align:center;'>PUT WALL<br><b style='font-size:28px; font-family:monospace;'>{put_wall_val:,.2f}</b></td>
+                    <td style='text-align:center;'>ZERO GAMMA<br><b style='font-size:28px; font-family:monospace;'>{zero_gamma_val:,.2f}</b></td>
+                </tr>
+            </table>
+        </div>
+        <hr>
+    """, unsafe_allow_html=True)
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
     col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
