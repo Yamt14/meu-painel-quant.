@@ -54,29 +54,21 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-# --- TÍTULO ---
-    st.markdown("<h1 style='text-align: center;'>PAINEL QUANT PRO 📊</h1>", unsafe_allow_html=True)
-    st.write("---")
-
-    # --- MÉTRICAS ---
+# --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
-    
     with col1:
-        st.markdown("<div style='text-align: center; font-size: 14px;'>MNQ PREÇO ATUAL</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{preco_spot:,.2f}</div>", unsafe_allow_html=True)
-        
+        st.subheader("MNQ PREÇO ATUAL")
+        st.metric(label="", value=f"{preco_spot:,.2f}")
     with col2:
-        st.markdown("<div style='text-align: center; font-size: 14px;'>CALL WALL</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{call_wall_val:,.2f}</div>", unsafe_allow_html=True)
-        
+        st.subheader("CALL WALL (Resistência)")
+        st.metric(label="", value=f"{call_wall_val:,.2f}")
     with col3:
-        st.markdown("<div style='text-align: center; font-size: 14px;'>PUT WALL</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{put_wall_val:,.2f}</div>", unsafe_allow_html=True)
-        
+        st.subheader("PUT WALL (Suporte)")
+        st.metric(label="", value=f"{put_wall_val:,.2f}")
     with col4:
-        st.markdown("<div style='text-align: center; font-size: 14px;'>ZERO GAMMA</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{zero_gamma_val:,.2f}</div>", unsafe_allow_html=True)
-
+        st.subheader("ZERO GAMMA (Pivô)")
+        st.metric(label="", value=f"{zero_gamma_val:,.2f}")
+        
     st.markdown("---")
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
