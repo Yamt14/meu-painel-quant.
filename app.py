@@ -20,11 +20,23 @@ st.markdown("""
 @st.cache_data(ttl=60)
 def carregar_dados_trading_desk_pro():
     try:
+        # Aumentamos a robustez da busca
         ticker_futuro = yf.Ticker("NQ=F")
         df_futuro = ticker_futuro.history(period="1d", interval="5m")
+        
+        # Se os dados estiverem vazios, tenta buscar um período um pouco maior
         if df_futuro.empty:
             df_futuro = ticker_futuro.history(period="5d", interval="5m")
+            
         preco_mnq = df_futuro["Close"].iloc[-1]
+        
+        # --- AQUI ESTÁ O SEGREDO ---
+        # Se quiser dados reais no "Institutional Flow", você precisa substituir 
+        # a linha abaixo por uma fonte de dados de Volume real (Volume Delta)
+        # Por enquanto, mantemos a lógica, mas vamos mudar o 'seed' para variar mais:
+        np.random.seed(int(preco_mnq * 100) % 1000) 
+        
+        # ... (resto do seu cálculo)
     except:
         datas = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='5min')
         df_futuro = pd.DataFrame({
