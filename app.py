@@ -54,8 +54,14 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-# --- BLOCO SUPERIORES DE MÉTRICAS ---
+# --- TÍTULO DO PAINEL ---
+    st.markdown("<h1 style='text-align: center; font-size: 32px;'>PAINEL QUANT PRO</h1>", unsafe_allow_html=True)
+    st.write("") # Espaçamento extra
+    st.write("") # Espaçamento extra
+
+    # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
+    # ... resto do seu código das colunas ...
     with col1:
         st.subheader("MNQ PREÇO ATUAL")
         st.metric(label="", value=f"{preco_spot:,.2f}")
