@@ -54,12 +54,20 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
- # --- Bloco do Topo ---
+# --- Bloco do Topo ---
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("MNQ ATUAL", "$30,144.25")
 c2.metric("CALL WALL", "$30,264.25")
 c3.metric("PUT WALL", "$29,994.25")
 c4.metric("ZERO GAMMA", "$30,119.25")
+st.markdown("---")
+
+# --- Layout dos Gráficos ---
+col_e, col_c, col_d = st.columns([1, 2, 1])
+
+with col_e:
+    st.plotly_chart(create_bar_chart(strikes, delta, "DELTA HEDGING"), use_container_width=True)
+    st.plotly_chart(create_bar_chart(strikes, time_p, "TIME PRESSURE"), use_container_width=True)
 
     st.markdown("---")
 
