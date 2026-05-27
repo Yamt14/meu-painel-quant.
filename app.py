@@ -59,28 +59,15 @@ try:
     st.write("") 
     st.write("") 
 
-    # --- BLOCO SUPERIORES DE MÉTRICAS ---
+  # --- BLOCO SUPERIORES DE MÉTRICAS (TESTE DE VISIBILIDADE) ---
     col1, col2, col3, col4 = st.columns(4)
     
-    with col1:
-        st.markdown("<p style='text-align: center; font-size: 14px;'>MNQ PREÇO ATUAL</p>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{preco_spot:,.2f}")
-        
-    with col2:
-        st.markdown("<p style='text-align: center; font-size: 14px;'>CALL WALL</p>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{call_wall_val:,.2f}")
-        
-    with col3:
-        st.markdown("<p style='text-align: center; font-size: 14px;'>PUT WALL</p>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{put_wall_val:,.2f}")
-        
-    with col4:
-        st.markdown("<p style='text-align: center; font-size: 14px;'>ZERO GAMMA</p>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{zero_gamma_val:,.2f}")
+    col1.markdown(f"<div style='text-align: center; color: white;'>MNQ PREÇO ATUAL<br><b style='font-size: 28px;'>{preco_spot:,.2f}</b></div>", unsafe_allow_html=True)
+    col2.markdown(f"<div style='text-align: center; color: white;'>CALL WALL<br><b style='font-size: 28px;'>{call_wall_val:,.2f}</b></div>", unsafe_allow_html=True)
+    col3.markdown(f"<div style='text-align: center; color: white;'>PUT WALL<br><b style='font-size: 28px;'>{put_wall_val:,.2f}</b></div>", unsafe_allow_html=True)
+    col4.markdown(f"<div style='text-align: center; color: white;'>ZERO GAMMA<br><b style='font-size: 28px;'>{zero_gamma_val:,.2f}</b></div>", unsafe_allow_html=True)
 
-    st.markdown("---")
-        
-    st.markdown("---")
+     st.markdown("---")
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
     col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
