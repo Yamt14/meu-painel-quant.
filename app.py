@@ -57,18 +57,17 @@ try:
 # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     
-    with col1:
-        st.markdown("<div style='font-size: 12px; color: #888;'>MNQ PREÇO ATUAL</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{preco_spot:,.2f}")
-    with col2:
-        st.markdown("<div style='font-size: 12px; color: #888;'>CALL WALL</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{call_wall_val:,.2f}")
-    with col3:
-        st.markdown("<div style='font-size: 12px; color: #888;'>PUT WALL</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{put_wall_val:,.2f}")
-    with col4:
-        st.markdown("<div style='font-size: 12px; color: #888;'>ZERO GAMMA</div>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{zero_gamma_val:,.2f}")
+    col1.markdown("<div style='font-size: 12px; color: #888;'>MNQ PREÇO ATUAL</div>", unsafe_allow_html=True)
+    col1.metric(label="", value=f"{preco_spot:,.2f}")
+    
+    col2.markdown("<div style='font-size: 12px; color: #888;'>CALL WALL</div>", unsafe_allow_html=True)
+    col2.metric(label="", value=f"{call_wall_val:,.2f}")
+    
+    col3.markdown("<div style='font-size: 12px; color: #888;'>PUT WALL</div>", unsafe_allow_html=True)
+    col3.metric(label="", value=f"{put_wall_val:,.2f}")
+    
+    col4.markdown("<div style='font-size: 12px; color: #888;'>ZERO GAMMA</div>", unsafe_allow_html=True)
+    col4.metric(label="", value=f"{zero_gamma_val:,.2f}")
 st.markdown("---")
 
 # --- Layout dos Gráficos ---
