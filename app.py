@@ -78,8 +78,8 @@ def create_candlestick_chart(df, spot_price, highlight_indices, title):
         high=df['High'],
         low=df['Low'],
         close=df['Close'],
-        increasing_line_color=green_color,
-        decreasing_line_color=red_color,
+        increasing_line_color=blue_color,
+        decreasing_line_color=blue_color,
         name=title
     )])
     
