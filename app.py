@@ -55,25 +55,30 @@ try:
     zero_gamma_val = preco_spot - 25
 
 # --- TÍTULO DO PAINEL ---
-    st.markdown("<h1 style='text-align: center; font-size: 32px;'>PAINEL QUANT PRO</h1>", unsafe_allow_html=True)
-    st.write("") # Espaçamento extra
-    st.write("") # Espaçamento extra
+    st.markdown("<h1 style='text-align: center; font-size: 32px;'>PAINEL QUANT PRO 📊</h1>", unsafe_allow_html=True)
+    st.write("") 
+    st.write("") 
 
     # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
-    # ... resto do seu código das colunas ...
+    
     with col1:
-        st.subheader("MNQ PREÇO ATUAL")
+        st.markdown("<p style='text-align: center; font-size: 14px;'>MNQ PREÇO ATUAL</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{preco_spot:,.2f}")
+        
     with col2:
-        st.subheader("CALL WALL")
+        st.markdown("<p style='text-align: center; font-size: 14px;'>CALL WALL</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{call_wall_val:,.2f}")
+        
     with col3:
-        st.subheader("PUT WALL")
+        st.markdown("<p style='text-align: center; font-size: 14px;'>PUT WALL</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{put_wall_val:,.2f}")
+        
     with col4:
-        st.subheader("ZERO GAMMA")
+        st.markdown("<p style='text-align: center; font-size: 14px;'>ZERO GAMMA</p>", unsafe_allow_html=True)
         st.metric(label="", value=f"{zero_gamma_val:,.2f}")
+
+    st.markdown("---")
         
     st.markdown("---")
 
