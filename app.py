@@ -54,22 +54,30 @@ try:
     put_wall_val = preco_spot - 150
     zero_gamma_val = preco_spot - 25
 
-# --- CABEÇALHO E MÉTRICAS EM UMA ÚNICA TABELA HTML ---
-    st.markdown(f"""
-        <div style='text-align: center;'>
-            <h1 style='font-size: 32px;'>PAINEL QUANT PRO 📊</h1>
-            <br>
-            <table style='width:100%; border:none;'>
-                <tr>
-                    <td style='text-align:center;'>MNQ PREÇO ATUAL<br><b style='font-size:28px; font-family:monospace;'>{preco_spot:,.2f}</b></td>
-                    <td style='text-align:center;'>CALL WALL<br><b style='font-size:28px; font-family:monospace;'>{call_wall_val:,.2f}</b></td>
-                    <td style='text-align:center;'>PUT WALL<br><b style='font-size:28px; font-family:monospace;'>{put_wall_val:,.2f}</b></td>
-                    <td style='text-align:center;'>ZERO GAMMA<br><b style='font-size:28px; font-family:monospace;'>{zero_gamma_val:,.2f}</b></td>
-                </tr>
-            </table>
-        </div>
-        <hr>
-    """, unsafe_allow_html=True)
+# --- TÍTULO ---
+    st.markdown("<h1 style='text-align: center;'>PAINEL QUANT PRO 📊</h1>", unsafe_allow_html=True)
+    st.write("---")
+
+    # --- MÉTRICAS ---
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown("<div style='text-align: center; font-size: 14px;'>MNQ PREÇO ATUAL</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{preco_spot:,.2f}</div>", unsafe_allow_html=True)
+        
+    with col2:
+        st.markdown("<div style='text-align: center; font-size: 14px;'>CALL WALL</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{call_wall_val:,.2f}</div>", unsafe_allow_html=True)
+        
+    with col3:
+        st.markdown("<div style='text-align: center; font-size: 14px;'>PUT WALL</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{put_wall_val:,.2f}</div>", unsafe_allow_html=True)
+        
+    with col4:
+        st.markdown("<div style='text-align: center; font-size: 14px;'>ZERO GAMMA</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; font-size: 28px; font-family: monospace;'>{zero_gamma_val:,.2f}</div>", unsafe_allow_html=True)
+
+    st.markdown("---")
 
     # --- RECONSTRUÇÃO DO LAYOUT DE 3 COLUNAS ---
     col_esquerda, col_centro, col_direita = st.columns([1, 2.2, 1])
