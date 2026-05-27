@@ -57,7 +57,7 @@ try:
 # --- BLOCO SUPERIORES DE MÉTRICAS ---
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.subheader("MNQ 📊PREÇO ATUAL")
+        st.subheader("📊MNQ PREÇO ATUAL")
         st.metric(label="", value=f"{preco_spot:,.2f}")
     with col2:
         st.subheader("CALL WALL 🟢")
